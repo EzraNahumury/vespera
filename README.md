@@ -66,8 +66,16 @@ vespera/
 | Chain | **Celo** (EVM-compatible L1) |
 | Language | **Solidity** ^0.8.20 |
 | Framework | **Hardhat** + **Foundry** |
-| Token | **CELO** (gas) + **cUSD** (deposits) |
-| Standards | ERC-721 (BadgeNFT), ERC-1155 optional |
+| Tokens | **CELO** (native/gas) + **USDm**, **USDC**, **USDT** (stablecoin deposits) |
+| Standards | **ERC-20** (USDm/USDC/USDT deposits), ERC-721 (BadgeNFT soulbound), ERC-1155 optional |
+
+#### Supported Tokens
+| Token | Name | Standard | Role |
+|-------|------|----------|------|
+| **USDm** | Mento Dollar | ERC-20 | Stablecoin deposit |
+| **USDC** | USD Coin | ERC-20 | Stablecoin deposit |
+| **USDT** | Tether USD | ERC-20 | Stablecoin deposit |
+| **CELO** | Celo Native Token | Native (ERC-20-compatible) | Gas / native |
 
 ### Frontend
 | Component | Technology |
@@ -128,7 +136,7 @@ Withdrawal voting with reputation-weighted tally. Confidence-based routing:
 | <50% | Auto-reject | — | — |
 
 ### 6. `Treasury`
-cUSD escrow contract. Funds can only be released by `VotingEngine` after quorum is met. Implements CEI (Checks-Effects-Interactions) pattern to prevent reentrancy.
+Multi-token escrow contract holding deposits in **USDm**, **USDC**, or **USDT**. Funds can only be released by `VotingEngine` after quorum is met. Implements CEI (Checks-Effects-Interactions) pattern to prevent reentrancy.
 
 ### 7. `ArisanGroup`
 Core per-group contract. Manages members, deposit rounds, withdrawal requests, and payout execution. Wired to all other contracts.
@@ -159,7 +167,7 @@ Reviewer Agents (one per member, parallel)
         ↓
 VotingEngine.finalize() — after deadline or quorum
         ↓
-Treasury.release() → cUSD transferred to requester
+Treasury.release() → stablecoin (USDm / USDC / USDT) transferred to requester
 ```
 
 ---
@@ -185,7 +193,7 @@ Key pages:
 
 ## Celo-Specific Features
 
-- **Gas paid in cUSD** — members never need to hold native CELO token
+- **Gas payable in stablecoins** — fee abstraction lets members pay gas in USDm / USDC / USDT instead of holding CELO
 - **Phone number mapping** — Celo's SocialConnect protocol for wallet discovery by phone
 - **Valora wallet support** — deeplinks for mobile-native payment UX
 - **Low fees** — sub-$0.01 transactions, viable for small recurring deposits
