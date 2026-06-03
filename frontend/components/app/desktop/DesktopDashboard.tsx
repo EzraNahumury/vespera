@@ -2,9 +2,8 @@
 import { useAccount } from "wagmi";
 import { useAllGroups } from "@/hooks/useGroups";
 import { useReputation } from "@/hooks/useReputation";
-import { TIER_LABELS, TIER_COLORS, BADGE_LABELS } from "@/lib/chain";
 import { GroupCard } from "@/components/app/GroupCard";
-import { Shield } from "lucide-react";
+import { ReputationGauge } from "@/components/ui/ReputationGauge";
 import Link from "next/link";
 
 export function DesktopDashboard() {
@@ -24,30 +23,10 @@ export function DesktopDashboard() {
         </div>
 
         {isConnected && address && (
-          <div className="mb-10 rounded-2xl bg-[#14532D] p-7 flex items-center justify-between gap-6">
-            <div>
-              <p className="text-white/50 text-sm mb-1">Your Reputation Score</p>
-              <div className="flex items-end gap-3">
-                <span className="text-6xl font-medium text-white" style={{ letterSpacing: "-0.04em" }}>{score}</span>
-                <span className="text-white/40 text-lg mb-1">/ 1000</span>
-              </div>
-              <span className="inline-block mt-2 text-xs font-medium px-3 py-1 rounded-full" style={{ backgroundColor: TIER_COLORS[tier], color: "#000" }}>
-                {TIER_LABELS[tier]}
-              </span>
-            </div>
-            <div className="flex-1 max-w-sm">
-              <div className="h-2 rounded-full bg-white/10 overflow-hidden">
-                <div className="h-full rounded-full bg-[#86EFAC] transition-all duration-700" style={{ width: `${score / 10}%` }} />
-              </div>
-              <p className="text-white/30 text-xs mt-2">{1000 - score} points to next tier</p>
-              <div className="flex flex-wrap gap-2 mt-4">
-                {BADGE_LABELS.map((label, i) => (
-                  <span key={i} className="flex items-center gap-1 text-xs text-white/40 bg-white/5 px-2 py-1 rounded-full">
-                    <Shield className="w-3 h-3" />{label}
-                  </span>
-                ))}
-              </div>
-            </div>
+          <div className="mb-10 flex justify-start">
+            <Link href="/app/reputation">
+              <ReputationGauge score={score} size={320} />
+            </Link>
           </div>
         )}
 

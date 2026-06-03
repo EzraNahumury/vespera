@@ -2,9 +2,9 @@
 import { useAccount } from "wagmi";
 import { useAllGroups } from "@/hooks/useGroups";
 import { useReputation } from "@/hooks/useReputation";
-import { TIER_LABELS, TIER_COLORS, BADGE_LABELS } from "@/lib/chain";
 import { GroupCard } from "@/components/app/GroupCard";
-import { Shield, ChevronRight } from "lucide-react";
+import { ReputationGauge } from "@/components/ui/ReputationGauge";
+import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 export function MobileDashboard() {
@@ -17,31 +17,12 @@ export function MobileDashboard() {
 
   return (
     <div className="min-h-screen bg-[#F5F5F5] pb-24">
-      {/* Reputation hero */}
+      {/* Reputation gauge hero */}
       {isConnected && address ? (
-        <div className="bg-[#14532D] px-5 pt-6 pb-8">
-          <p className="text-white/50 text-xs mb-1">Your Reputation</p>
-          <div className="flex items-end gap-2 mb-3">
-            <span className="text-5xl font-medium text-white" style={{ letterSpacing: "-0.04em" }}>{score}</span>
-            <span className="text-white/40 mb-1">/ 1000</span>
-          </div>
-          <div className="h-1.5 rounded-full bg-white/10 overflow-hidden mb-2">
-            <div className="h-full rounded-full bg-[#86EFAC] transition-all" style={{ width: `${score / 10}%` }} />
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium px-3 py-1 rounded-full" style={{ backgroundColor: TIER_COLORS[tier], color: "#000" }}>
-              {TIER_LABELS[tier]}
-            </span>
-            <span className="text-white/30 text-xs">{1000 - score} pts to next tier</span>
-          </div>
-          {/* Badges row */}
-          <div className="flex gap-2 mt-4 overflow-x-auto pb-1 scrollbar-none">
-            {BADGE_LABELS.map((label, i) => (
-              <span key={i} className="flex items-center gap-1 text-xs text-white/40 bg-white/5 px-2 py-1 rounded-full whitespace-nowrap shrink-0">
-                <Shield className="w-3 h-3" />{label}
-              </span>
-            ))}
-          </div>
+        <div className="flex justify-center pt-4 pb-2 px-4">
+          <Link href="/app/reputation" className="w-full">
+            <ReputationGauge score={score} size={400} />
+          </Link>
         </div>
       ) : (
         <div className="bg-[#86EFAC] px-5 py-6">
