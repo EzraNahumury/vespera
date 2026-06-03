@@ -1,6 +1,12 @@
 import { LogoIcon } from "./LogoIcon";
+import { WalletButton } from "./WalletButton";
 
-const navLinks = ["How it Works", "Groups", "Reputation", "Docs", "FAQ"];
+const navLinks = [
+  { label: "How it Works", href: "#how" },
+  { label: "Groups", href: "#app/groups" },
+  { label: "Reputation", href: "#app/reputation" },
+  { label: "Docs", href: "#docs" },
+];
 
 export function Navbar() {
   return (
@@ -19,21 +25,19 @@ export function Navbar() {
 
         {/* Center: Nav links */}
         <div className="hidden md:flex items-center gap-8">
-          {navLinks.map((link) => (
+          {navLinks.map(({ label, href }) => (
             <a
-              key={link}
-              href="#"
+              key={href}
+              href={href}
               className="text-base text-gray-700 hover:text-black font-medium transition-colors duration-200"
             >
-              {link}
+              {label}
             </a>
           ))}
         </div>
 
         {/* Right: CTA */}
-        <button className="bg-[#86EFAC] text-black text-base font-medium px-7 py-2.5 rounded-full hover:bg-[#4ADE80] transition-colors duration-200">
-          Launch App
-        </button>
+        <WalletButton className="bg-[#86EFAC] text-black text-base font-medium px-7 py-2.5 rounded-full hover:bg-[#4ADE80] transition-colors duration-200" />
       </div>
     </nav>
   );
