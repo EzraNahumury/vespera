@@ -1,64 +1,104 @@
+"use client";
+
+import ScrollStack, { ScrollStackItem } from "@/components/ui/ScrollStack";
+
 const steps = [
   {
     number: "01",
     title: "Create a Group",
-    desc: "Deploy an ArisanGroup smart contract via GroupRegistry. Set deposit token (USDC/USDT/CELO), amount, max members (5–15), and round duration.",
+    desc: "Deploy an ArisanGroup smart contract via GroupRegistry. Set deposit token (USDC / USDT / CELO), amount per round, max members (5–15), and round duration.",
+    bg: "#86EFAC",
+    text: "#000",
   },
   {
     number: "02",
     title: "Invite & Deposit",
-    desc: "Creator invites members by wallet address. Each member deposits a fixed amount every round into the Treasury escrow contract.",
+    desc: "Creator invites members by wallet address. Each member deposits a fixed amount every round directly into the Treasury escrow contract on Celo.",
+    bg: "#14532D",
+    text: "#fff",
   },
   {
     number: "03",
     title: "Request Withdrawal",
-    desc: "When it's your turn, submit a withdrawal request with a reason. The Requester AI Agent validates it in under 10 seconds.",
+    desc: "When it's your turn, submit a withdrawal request with a reason. The off-chain Requester AI Agent (Claude) validates it in under 10 seconds.",
+    bg: "#4ADE80",
+    text: "#000",
   },
   {
     number: "04",
     title: "AI Confidence Routing",
-    desc: "Score ≥85% → fast-track (30% quorum, 12h). Score 50–84% → normal vote (60% quorum, 24h). Score <50% → auto-rejected.",
+    desc: "≥85% confidence → fast-track (30% quorum, 12h). 50–84% → normal vote (60% quorum, 24h). Below 50% → auto-rejected, reason logged to IPFS.",
+    bg: "#166534",
+    text: "#fff",
   },
   {
     number: "05",
     title: "Members Vote",
-    desc: "Reviewer AI Agents (one per member) independently reason and cast on-chain votes. Vote weight = reputation score + 1.",
+    desc: "Reviewer AI Agents — one per member — independently reason and cast on-chain votes. Vote weight = reputation score + 1. Higher reputation = heavier vote.",
+    bg: "#86EFAC",
+    text: "#000",
   },
   {
     number: "06",
     title: "Payout Released",
-    desc: "Once quorum and majority are met, VotingEngine triggers Treasury to release stablecoins directly to the requester's wallet.",
+    desc: "Once quorum and majority are met, VotingEngine triggers Treasury to release stablecoins directly to the requester's wallet. Immutable and instant.",
+    bg: "#14532D",
+    text: "#fff",
   },
 ];
 
 export function HowItWorks() {
   return (
-    <section id="how" className="bg-[#F5F5F5] px-4 md:px-6 py-24 scroll-mt-20">
-      <div className="max-w-[88rem] mx-auto">
-        {/* Header */}
-        <div className="mb-16">
-          <p className="text-black/50 text-sm mb-2">Step by step</p>
-          <h2 className="text-4xl md:text-5xl font-medium text-black leading-tight" style={{ letterSpacing: "-0.03em" }}>
-            How Vespera Works
-          </h2>
-        </div>
+    <section id="how" className="bg-[#F5F5F5] scroll-mt-20">
+      <div className="max-w-[88rem] mx-auto px-4 md:px-6 pt-24 pb-8">
+        <p className="text-black/50 text-sm mb-2">Step by step</p>
+        <h2 className="text-4xl md:text-5xl font-medium text-black leading-tight mb-4" style={{ letterSpacing: "-0.03em" }}>
+          How Vespera Works
+        </h2>
+        <p className="text-black/50 text-base max-w-lg">
+          From group creation to payout — every step is on-chain, AI-validated, and governed by reputation.
+        </p>
+      </div>
 
-        {/* Steps — desktop: 3 col grid, mobile: stack */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-black/5 rounded-3xl overflow-hidden">
-          {steps.map((step, i) => (
-            <div
-              key={i}
-              className="bg-[#F5F5F5] p-7 md:p-8 hover:bg-white transition-colors duration-200"
-            >
-              <span className="text-[#86EFAC] text-sm font-medium font-mono mb-4 block">{step.number}</span>
-              <h3 className="text-black text-xl font-medium mb-3 leading-snug">{step.title}</h3>
-              <p className="text-black/55 text-sm leading-relaxed">{step.desc}</p>
-            </div>
+      {/* ScrollStack — full viewport height */}
+      <div style={{ height: "100vh", position: "relative" }}>
+        <ScrollStack
+          itemDistance={120}
+          itemScale={0.04}
+          itemStackDistance={24}
+          stackPosition="15%"
+          scaleEndPosition="8%"
+          baseScale={0.88}
+        >
+          {steps.map((step) => (
+            <ScrollStackItem key={step.number}>
+              <div
+                className="h-full min-h-64 p-8 md:p-12 flex flex-col justify-between"
+                style={{ backgroundColor: step.bg, color: step.text }}
+              >
+                <span
+                  className="text-5xl font-medium font-mono opacity-30"
+                  style={{ letterSpacing: "-0.04em" }}
+                >
+                  {step.number}
+                </span>
+                <div>
+                  <h3 className="text-2xl md:text-3xl font-medium mb-3" style={{ letterSpacing: "-0.02em" }}>
+                    {step.title}
+                  </h3>
+                  <p className="text-base leading-relaxed opacity-75 max-w-xl">
+                    {step.desc}
+                  </p>
+                </div>
+              </div>
+            </ScrollStackItem>
           ))}
-        </div>
+        </ScrollStack>
+      </div>
 
-        {/* Confidence routing visual */}
-        <div className="mt-8 rounded-2xl bg-[#14532D] p-7 md:p-10">
+      {/* Confidence routing visual */}
+      <div className="max-w-[88rem] mx-auto px-4 md:px-6 pb-24">
+        <div className="rounded-2xl bg-[#14532D] p-7 md:p-10">
           <p className="text-white/60 text-sm mb-5">AI Confidence Routing</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
