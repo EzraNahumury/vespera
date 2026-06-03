@@ -1,7 +1,6 @@
 "use client";
 import { useAccount } from "wagmi";
 import { useReputation } from "@/hooks/useReputation";
-import { useIsMobile } from "@/hooks/useIsMobile";
 import { TIER_LABELS, TIER_COLORS, BADGE_LABELS } from "@/lib/chain";
 import { Shield } from "lucide-react";
 
@@ -76,9 +75,8 @@ function ReputationContent() {
 }
 
 export default function ReputationPage() {
-  const isMobile = useIsMobile();
   return (
-    <div className={`min-h-screen bg-[#F5F5F5] ${isMobile ? "pb-24" : ""}`}>
+    <div className="min-h-screen bg-[#F5F5F5] pb-24 md:pb-0">
       <ReputationContent />
     </div>
   );

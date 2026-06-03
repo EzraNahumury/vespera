@@ -1,10 +1,7 @@
-"use client";
-
-import { useIsMobile } from "@/hooks/useIsMobile";
+import { ResponsiveView } from "@/components/ui/ResponsiveView";
 import { DesktopSettings } from "@/components/app/desktop/DesktopSettings";
 import { MobileSettings } from "@/components/app/mobile/MobileSettings";
 
 export default function SettingsPage() {
-  const isMobile = useIsMobile();
-  return isMobile ? <MobileSettings /> : <DesktopSettings />;
+  return <ResponsiveView mobile={<MobileSettings />} desktop={<DesktopSettings />} />;
 }

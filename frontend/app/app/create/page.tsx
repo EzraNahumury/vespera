@@ -1,9 +1,7 @@
-"use client";
-import { useIsMobile } from "@/hooks/useIsMobile";
+import { ResponsiveView } from "@/components/ui/ResponsiveView";
 import { DesktopCreateGroup } from "@/components/app/desktop/DesktopCreateGroup";
 import { MobileCreateGroup } from "@/components/app/mobile/MobileCreateGroup";
 
 export default function CreateGroupPage() {
-  const isMobile = useIsMobile();
-  return isMobile ? <MobileCreateGroup /> : <DesktopCreateGroup />;
+  return <ResponsiveView mobile={<MobileCreateGroup />} desktop={<DesktopCreateGroup />} />;
 }
