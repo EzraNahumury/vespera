@@ -1,3 +1,27 @@
+"use client";
+
+import LogoLoop from "@/components/ui/LogoLoop";
+import {
+  SiSolidity, SiNextdotjs, SiTypescript, SiTailwindcss,
+  SiReact, SiWagmi, SiOpenzeppelin, SiIpfs,
+} from "react-icons/si";
+import { Brain, Hammer, Shield, Coins } from "lucide-react";
+
+const techLogos = [
+  { node: <Coins size={28} />,  title: "Celo",          href: "https://celo.org" },
+  { node: <SiSolidity />,       title: "Solidity",      href: "https://soliditylang.org" },
+  { node: <SiNextdotjs />,      title: "Next.js",       href: "https://nextjs.org" },
+  { node: <SiTypescript />,     title: "TypeScript",    href: "https://typescriptlang.org" },
+  { node: <SiTailwindcss />,    title: "Tailwind CSS",  href: "https://tailwindcss.com" },
+  { node: <SiReact />,          title: "React",         href: "https://react.dev" },
+  { node: <SiWagmi />,          title: "Wagmi",         href: "https://wagmi.sh" },
+  { node: <SiOpenzeppelin />,   title: "OpenZeppelin",  href: "https://openzeppelin.com" },
+  { node: <SiIpfs />,           title: "IPFS",          href: "https://ipfs.tech" },
+  { node: <Brain size={28} />,  title: "Claude AI",     href: "https://anthropic.com" },
+  { node: <Hammer size={28} />, title: "Foundry",       href: "https://getfoundry.sh" },
+  { node: <Shield size={28} />, title: "Viem",          href: "https://viem.sh" },
+];
+
 const layers = [
   {
     label: "Blockchain",
@@ -48,26 +72,41 @@ export function TechStack() {
   return (
     <section id="stack" className="bg-[#F5F5F5] px-4 md:px-6 py-24 scroll-mt-20">
       <div className="max-w-[88rem] mx-auto">
-        <div className="mb-16">
+        <div className="mb-12">
           <p className="text-black/50 text-sm mb-2">Architecture</p>
           <h2 className="text-4xl md:text-5xl font-medium text-black leading-tight" style={{ letterSpacing: "-0.03em" }}>
             Built With
           </h2>
         </div>
 
+        {/* LogoLoop */}
+        <div className="mb-14 py-4" style={{ height: "80px", position: "relative", overflow: "hidden" }}>
+          <LogoLoop
+            logos={techLogos}
+            speed={80}
+            direction="left"
+            logoHeight={32}
+            gap={48}
+            hoverSpeed={0}
+            scaleOnHover
+            fadeOut
+            fadeOutColor="#F5F5F5"
+            ariaLabel="Technology stack"
+          />
+        </div>
+
+        {/* Detail cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {layers.map(({ label, color, items }) => (
             <div key={label} className="rounded-2xl bg-white p-7 border border-black/5">
-              {/* Layer label */}
               <div className="flex items-center gap-2 mb-5">
                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
                 <span className="text-black/50 text-sm font-medium uppercase tracking-wider">{label}</span>
               </div>
-
               <ul className="space-y-4">
                 {items.map(({ name, desc }) => (
                   <li key={name} className="flex items-start gap-3">
-                    <span className="text-xs font-mono text-white px-2 py-1 rounded-md shrink-0 mt-0.5" style={{ backgroundColor: color, color: "#000" }}>
+                    <span className="text-xs font-mono px-2 py-1 rounded-md shrink-0 mt-0.5" style={{ backgroundColor: color, color: "#000" }}>
                       {name}
                     </span>
                     <span className="text-black/55 text-sm leading-relaxed">{desc}</span>
