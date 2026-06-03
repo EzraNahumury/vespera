@@ -6,24 +6,23 @@ import { TechStack } from "@/components/landing/TechStack";
 import { BackedBySection } from "@/components/landing/BackedBySection";
 import { UseCasesSection } from "@/components/landing/UseCasesSection";
 import { FAQ } from "@/components/landing/FAQ";
+import { CTASection } from "@/components/landing/CTASection";
 import { Footer } from "@/components/landing/Footer";
 
 export default function LandingPage() {
   return (
     <div className="flex flex-col bg-[#F5F5F5]">
-      {/* Hero — full screen */}
       <div className="h-screen flex flex-col overflow-hidden">
         <Navbar />
         <HeroSection />
       </div>
-
-      {/* Sections */}
       <InfoSection />
       <HowItWorks />
       <TechStack />
       <BackedBySection />
       <UseCasesSection />
       <FAQ />
+      <CTASection />
       <Footer />
     </div>
   );
