@@ -1,19 +1,24 @@
 "use client";
+import { useState } from "react";
 import { useAccount } from "wagmi";
 import { useAllGroups } from "@/hooks/useGroups";
 import { useReputation } from "@/hooks/useReputation";
 import { GroupCard } from "@/components/app/GroupCard";
 import { ReputationGauge } from "@/components/ui/ReputationGauge";
-import { ChevronRight, Plus } from "lucide-react";
+import { ChevronRight, Plus, Search } from "lucide-react";
 import Link from "next/link";
 
 export function MobileDashboard() {
   const { address, isConnected } = useAccount();
   const { data: groups, isLoading } = useAllGroups();
   const { data: repData } = useReputation(address);
+  const [query, setQuery] = useState("");
 
   const score = repData?.[0]?.result ? Number(repData[0].result) : 0;
-  const groupList = (groups as `0x${string}`[] | undefined) ?? [];
+  const allGroups = (groups as `0x${string}`[] | undefined) ?? [];
+  const groupList = query
+    ? allGroups.filter(a => a.toLowerCase().includes(query.toLowerCase()))
+    : allGroups;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#F2F2F7" }}>
@@ -70,6 +75,19 @@ export function MobileDashboard() {
           </Link>
         </div>
 
+        {allGroups.length > 0 && (
+          <div className="relative mb-3">
+            <Search className="w-4 h-4 text-black/30 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search by address…"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              className="w-full bg-white rounded-xl pl-9 pr-4 py-3 text-sm outline-none placeholder:text-black/25"
+            />
+          </div>
+        )}
+
         {isLoading ? (
           <div className="bg-white rounded-2xl overflow-hidden divide-y divide-black/[0.06]">
             {[1,2,3].map(i => (
@@ -85,6 +103,10 @@ export function MobileDashboard() {
         ) : groupList.length > 0 ? (
           <div className="space-y-3">
             {groupList.map(addr => <GroupCard key={addr} address={addr} />)}
+          </div>
+        ) : allGroups.length > 0 ? (
+          <div className="bg-white rounded-2xl px-4 py-8 text-center">
+            <p className="text-sm text-black/40">No groups match &ldquo;{query}&rdquo;.</p>
           </div>
         ) : (
           <div className="bg-white rounded-2xl px-4 py-10 text-center">
