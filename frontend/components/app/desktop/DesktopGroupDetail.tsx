@@ -114,6 +114,12 @@ export function DesktopGroupDetail({ address }: { address: `0x${string}` }) {
               </div>
             )}
 
+            {wallet && !isMember && !canJoin && !isCreator && (
+              <div className="rounded-2xl bg-white p-7 border border-black/5 text-center">
+                <p className="text-black/50 text-sm">You&apos;re not a member of this group, and have no pending invite.</p>
+              </div>
+            )}
+
             {isCreator && (
               <div className="rounded-2xl bg-white p-7 border border-black/5">
                 <div className="flex items-center gap-2 mb-3">
