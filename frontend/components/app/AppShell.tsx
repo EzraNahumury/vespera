@@ -5,6 +5,7 @@ import { ReactNode } from "react";
 import { LogoIcon } from "@/components/ui/LogoIcon";
 import { WalletButton } from "@/components/ui/WalletButton";
 import { WalletGuard } from "@/components/app/WalletGuard";
+import { NetworkGuard } from "@/components/app/NetworkGuard";
 import { Home, Users, Plus, Star, Settings } from "lucide-react";
 
 const navItems = [
@@ -62,7 +63,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Page content */}
       <main className="flex-1 pb-24 md:pb-0">
-        <WalletGuard>{children}</WalletGuard>
+        <WalletGuard>
+          <NetworkGuard>{children}</NetworkGuard>
+        </WalletGuard>
       </main>
 
       {/* ── Mobile iOS-style bottom tab bar ── */}
