@@ -184,17 +184,19 @@ export function MobileSettings() {
         </div>
 
         {/* ── Logout ── */}
-        <div>
-          <div className="bg-white rounded-2xl overflow-hidden">
-            <button onClick={() => disconnect()}
-              className="w-full flex items-center gap-3 px-4 py-4 active:bg-red-50 transition-colors text-left">
-              <div className="w-9 h-9 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
-                <LogOut className="w-4 h-4 text-red-500" />
-              </div>
-              <span className="text-sm font-semibold text-red-500">Disconnect Wallet</span>
-            </button>
+        {isConnected && (
+          <div>
+            <div className="bg-white rounded-2xl overflow-hidden">
+              <button onClick={() => disconnect()}
+                className="w-full flex items-center gap-3 px-4 py-4 active:bg-red-50 transition-colors text-left">
+                <div className="w-9 h-9 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
+                  <LogOut className="w-4 h-4 text-red-500" />
+                </div>
+                <span className="text-sm font-semibold text-red-500">Disconnect Wallet</span>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         <p className="text-center text-xs text-black/25 pt-2">© 2026 Vespera · Celo Hackathon</p>
       </div>
