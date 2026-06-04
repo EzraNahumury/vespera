@@ -27,7 +27,10 @@ export function DesktopGroupDetail({ address }: { address: `0x${string}` }) {
     ],
   });
   const { data: memberCheck } = useReadContracts({
-    contracts: wallet ? [{ address, abi: ArisanGroupABI, functionName: "isMember" as const, args: [wallet] }] : [],
+    contracts: wallet ? [
+      { address, abi: ArisanGroupABI, functionName: "isMember" as const, args: [wallet] },
+      { address, abi: ArisanGroupABI, functionName: "invited" as const, args: [wallet] },
+    ] : [],
     query: { enabled: !!wallet },
   });
 
@@ -40,7 +43,9 @@ export function DesktopGroupDetail({ address }: { address: `0x${string}` }) {
   const members = data?.[6]?.result as `0x${string}`[] | undefined;
   const creator = data?.[7]?.result as `0x${string}` | undefined;
   const isMember = memberCheck?.[0]?.result as boolean | undefined;
+  const isInvited = memberCheck?.[1]?.result as boolean | undefined;
   const isCreator = !!creator && !!wallet && creator.toLowerCase() === wallet.toLowerCase();
+  const canJoin = !!isInvited && !isMember;
 
   const tokenLabel = token ? (TOKEN_LABELS[token] ?? "token") : "—";
   const depositFmt = depositAmount ? formatUnits(depositAmount, 18) : "—";
@@ -52,6 +57,8 @@ export function DesktopGroupDetail({ address }: { address: `0x${string}` }) {
   const { writeContract: castVote, isPending: voting } = useWriteContract();
   const { writeContract: invite, data: iHash, isPending: iPending } = useWriteContract();
   const { isLoading: iConfirming, isSuccess: iDone } = useWaitForTransactionReceipt({ hash: iHash });
+  const { writeContract: join, data: jHash, isPending: jPending } = useWriteContract();
+  const { isLoading: jConfirming, isSuccess: jDone } = useWaitForTransactionReceipt({ hash: jHash });
 
   const inviteList = inviteAddr.split(",").map(s => s.trim()).filter(Boolean);
   const validInvites = inviteList.filter(a => isAddress(a)) as `0x${string}`[];
@@ -92,6 +99,27 @@ export function DesktopGroupDetail({ address }: { address: `0x${string}` }) {
         <div className="grid grid-cols-3 gap-6">
           {/* Left col: deposit + withdraw */}
           <div className="col-span-2 space-y-5">
+            {canJoin && (
+              <div className="rounded-2xl bg-[#86EFAC]/10 border border-[#86EFAC] p-7">
+                <h2 className="text-black text-xl font-medium mb-2">You&apos;re invited 🎉</h2>
+                <p className="text-black/60 text-sm mb-5">You&apos;ve been invited to this group. Join to start depositing and voting.</p>
+                <button
+                  onClick={() => join({ address, abi: ArisanGroupABI, functionName: "join" })}
+                  disabled={jPending || jConfirming}
+                  className="flex items-center justify-center gap-2 bg-[#86EFAC] text-black font-medium px-7 py-3 rounded-xl hover:bg-[#4ADE80] transition-colors disabled:opacity-50"
+                >
+                  {(jPending || jConfirming) && <Loader className="w-4 h-4 animate-spin" />}
+                  {jPending ? "Confirm…" : jConfirming ? "Joining…" : jDone ? "Joined ✓" : "Join Group"}
+                </button>
+              </div>
+            )}
+
+            {wallet && !isMember && !canJoin && !isCreator && (
+              <div className="rounded-2xl bg-white p-7 border border-black/5 text-center">
+                <p className="text-black/50 text-sm">You&apos;re not a member of this group, and have no pending invite.</p>
+              </div>
+            )}
+
             {isCreator && (
               <div className="rounded-2xl bg-white p-7 border border-black/5">
                 <div className="flex items-center gap-2 mb-3">
