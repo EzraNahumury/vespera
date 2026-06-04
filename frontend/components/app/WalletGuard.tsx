@@ -3,7 +3,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { useAccount, useConnect } from "wagmi";
 import { injected } from "wagmi/connectors";
-import { Wallet } from "lucide-react";
+import { Wallet, Loader2 } from "lucide-react";
 
 /**
  * Gates /app/* content behind a connected wallet.
@@ -13,11 +13,20 @@ export function WalletGuard({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const { isConnected } = useAccount();
+  const { isConnected, status } = useAccount();
   const { connect } = useConnect();
 
   // Avoid hydration mismatch — wallet state is client-only.
   if (!mounted) return null;
+
+  // Avoid a connect-prompt flash while wagmi restores the session.
+  if (status === "reconnecting" || status === "connecting") {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center">
+        <Loader2 className="w-6 h-6 text-black/30 animate-spin" />
+      </div>
+    );
+  }
 
   if (!isConnected) {
     return (
