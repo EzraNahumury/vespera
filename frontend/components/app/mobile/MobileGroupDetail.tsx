@@ -30,7 +30,10 @@ export function MobileGroupDetail({ address }: { address: `0x${string}` }) {
     ],
   });
   const { data: memberCheck } = useReadContracts({
-    contracts: wallet ? [{ address, abi: ArisanGroupABI, functionName: "isMember" as const, args: [wallet] }] : [],
+    contracts: wallet ? [
+      { address, abi: ArisanGroupABI, functionName: "isMember" as const, args: [wallet] },
+      { address, abi: ArisanGroupABI, functionName: "invited" as const, args: [wallet] },
+    ] : [],
     query: { enabled: !!wallet },
   });
 
@@ -43,7 +46,9 @@ export function MobileGroupDetail({ address }: { address: `0x${string}` }) {
   const members     = data?.[6]?.result as `0x${string}`[] | undefined;
   const creator     = data?.[7]?.result as `0x${string}` | undefined;
   const isMember    = memberCheck?.[0]?.result as boolean | undefined;
+  const isInvited   = memberCheck?.[1]?.result as boolean | undefined;
   const isCreator   = !!creator && !!wallet && creator.toLowerCase() === wallet.toLowerCase();
+  const canJoin     = !!isInvited && !isMember;
 
   const tokenLabel  = token ? (TOKEN_LABELS[token] ?? "token") : "—";
   const depositFmt  = depositAmt ? formatUnits(depositAmt, 18) : "—";
@@ -56,6 +61,8 @@ export function MobileGroupDetail({ address }: { address: `0x${string}` }) {
   const { writeContract: castVote, isPending: voting } = useWriteContract();
   const { writeContract: invite, data: iHash, isPending: iPending } = useWriteContract();
   const { isLoading: iConfirm, isSuccess: iDone } = useWaitForTransactionReceipt({ hash: iHash });
+  const { writeContract: join, data: jHash, isPending: jPending } = useWriteContract();
+  const { isLoading: jConfirm, isSuccess: jDone } = useWaitForTransactionReceipt({ hash: jHash });
 
   const inviteList = inviteAddr.split(",").map(s => s.trim()).filter(Boolean);
   const validInvites = inviteList.filter(a => isAddress(a)) as `0x${string}`[];
@@ -137,6 +144,20 @@ export function MobileGroupDetail({ address }: { address: `0x${string}` }) {
         {/* ── Overview tab ── */}
         {tab === "overview" && (
           <div>
+            {canJoin && (
+              <div className="bg-[#86EFAC]/15 border border-[#86EFAC] rounded-2xl px-4 py-4 mb-4">
+                <p className="font-semibold text-black text-sm mb-1">You&apos;re invited 🎉</p>
+                <p className="text-xs text-black/55 mb-3">Join to start depositing and voting.</p>
+                <button
+                  onClick={() => join({ address, abi: ArisanGroupABI, functionName: "join" })}
+                  disabled={jPending || jConfirm}
+                  className="w-full flex items-center justify-center gap-2 bg-[#86EFAC] text-black font-semibold py-3 rounded-xl text-sm disabled:opacity-50 active:scale-[0.98] transition-transform"
+                >
+                  {(jPending || jConfirm) && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {jPending ? "Confirm…" : jConfirm ? "Joining…" : jDone ? "Joined ✓" : "Join Group"}
+                </button>
+              </div>
+            )}
             {isCreator && (
               <div className="bg-white rounded-2xl px-4 py-4 mb-4">
                 <div className="flex items-center gap-2 mb-2">
