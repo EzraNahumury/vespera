@@ -1,17 +1,18 @@
 "use client";
 import { useReadContracts, useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
-import { parseUnits, formatUnits } from "viem";
+import { parseUnits, formatUnits, isAddress } from "viem";
 import { useState } from "react";
 import { ArisanGroupABI } from "@/abis/ArisanGroup";
 import { VotingEngineABI } from "@/abis/VotingEngine";
 import { TOKEN_LABELS, CONTRACTS } from "@/lib/chain";
-import { Loader, CheckCircle, XCircle, Users, Clock, ArrowLeft } from "lucide-react";
+import { Loader, CheckCircle, XCircle, Users, Clock, ArrowLeft, UserPlus } from "lucide-react";
 import Link from "next/link";
 
 export function DesktopGroupDetail({ address }: { address: `0x${string}` }) {
   const { address: wallet } = useAccount();
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawReason, setWithdrawReason] = useState("");
+  const [inviteAddr, setInviteAddr] = useState("");
 
   const { data } = useReadContracts({
     contracts: [
@@ -22,6 +23,7 @@ export function DesktopGroupDetail({ address }: { address: `0x${string}` }) {
       { address, abi: ArisanGroupABI, functionName: "currentRound" },
       { address, abi: ArisanGroupABI, functionName: "activeRequestId" },
       { address, abi: ArisanGroupABI, functionName: "getMembers" },
+      { address, abi: ArisanGroupABI, functionName: "creator" },
     ],
   });
   const { data: memberCheck } = useReadContracts({
@@ -36,7 +38,9 @@ export function DesktopGroupDetail({ address }: { address: `0x${string}` }) {
   const currentRound = data?.[4]?.result ? Number(data[4].result) : 1;
   const activeRequestId = data?.[5]?.result ? Number(data[5].result) : 0;
   const members = data?.[6]?.result as `0x${string}`[] | undefined;
+  const creator = data?.[7]?.result as `0x${string}` | undefined;
   const isMember = memberCheck?.[0]?.result as boolean | undefined;
+  const isCreator = !!creator && !!wallet && creator.toLowerCase() === wallet.toLowerCase();
 
   const tokenLabel = token ? (TOKEN_LABELS[token] ?? "token") : "—";
   const depositFmt = depositAmount ? formatUnits(depositAmount, 18) : "—";
@@ -46,6 +50,8 @@ export function DesktopGroupDetail({ address }: { address: `0x${string}` }) {
   const { writeContract: requestW, data: wHash, isPending: wPending } = useWriteContract();
   const { isLoading: wConfirming, isSuccess: wDone } = useWaitForTransactionReceipt({ hash: wHash });
   const { writeContract: castVote, isPending: voting } = useWriteContract();
+  const { writeContract: invite, data: iHash, isPending: iPending } = useWriteContract();
+  const { isLoading: iConfirming, isSuccess: iDone } = useWaitForTransactionReceipt({ hash: iHash });
 
   return (
     <div className="min-h-screen bg-[#F5F5F5] px-6 py-10">
@@ -75,6 +81,33 @@ export function DesktopGroupDetail({ address }: { address: `0x${string}` }) {
         <div className="grid grid-cols-3 gap-6">
           {/* Left col: deposit + withdraw */}
           <div className="col-span-2 space-y-5">
+            {isCreator && (
+              <div className="rounded-2xl bg-white p-7 border border-black/5">
+                <div className="flex items-center gap-2 mb-3">
+                  <UserPlus className="w-4 h-4 text-black/40" />
+                  <h2 className="text-black text-xl font-medium">Invite Member</h2>
+                </div>
+                <p className="text-black/50 text-sm mb-4">As the group founder, invite members by wallet address.</p>
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    placeholder="0x… wallet address"
+                    value={inviteAddr}
+                    onChange={e => setInviteAddr(e.target.value)}
+                    className="flex-1 rounded-xl border border-black/10 px-4 py-3 text-sm font-mono focus:outline-none focus:border-[#86EFAC]"
+                  />
+                  <button
+                    onClick={() => invite({ address, abi: ArisanGroupABI, functionName: "invite", args: [inviteAddr as `0x${string}`] })}
+                    disabled={iPending || iConfirming || !isAddress(inviteAddr)}
+                    className="flex items-center justify-center gap-2 bg-[#86EFAC] text-black font-medium px-6 py-3 rounded-xl hover:bg-[#4ADE80] transition-colors disabled:opacity-50 shrink-0"
+                  >
+                    {(iPending || iConfirming) && <Loader className="w-4 h-4 animate-spin" />}
+                    {iPending ? "Confirm…" : iConfirming ? "Inviting…" : iDone ? "Invited ✓" : "Invite"}
+                  </button>
+                </div>
+              </div>
+            )}
+
             {isMember && (
               <div className="rounded-2xl bg-white p-7 border border-black/5">
                 <h2 className="text-black text-xl font-medium mb-3">Deposit This Round</h2>
