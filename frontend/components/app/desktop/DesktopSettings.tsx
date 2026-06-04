@@ -71,15 +71,17 @@ export function DesktopSettings() {
               </button>
             ))}
 
-            <div className="mt-2 pt-2 border-t border-black/5">
-              <button
-                onClick={() => disconnect()}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
-              >
-                <LogOut className="w-4 h-4 shrink-0" />
-                Disconnect Wallet
-              </button>
-            </div>
+            {isConnected && (
+              <div className="mt-2 pt-2 border-t border-black/5">
+                <button
+                  onClick={() => disconnect()}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
+                >
+                  <LogOut className="w-4 h-4 shrink-0" />
+                  Disconnect Wallet
+                </button>
+              </div>
+            )}
           </nav>
 
           {/* Content */}
