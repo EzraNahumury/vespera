@@ -59,6 +59,8 @@ export function MobileGroupDetail({ address }: { address: `0x${string}` }) {
   const { writeContract: reqW, data: wHash, isPending: wPending } = useWriteContract();
   const { isLoading: wConfirm, isSuccess: wDone } = useWaitForTransactionReceipt({ hash: wHash });
   const { writeContract: castVote, isPending: voting } = useWriteContract();
+  const { writeContract: finalizeVote, data: fHash, isPending: fPending } = useWriteContract();
+  const { isLoading: fConfirm, isSuccess: fDone } = useWaitForTransactionReceipt({ hash: fHash });
   const { writeContract: invite, data: iHash, isPending: iPending } = useWriteContract();
   const { isLoading: iConfirm, isSuccess: iDone } = useWaitForTransactionReceipt({ hash: iHash });
   const { writeContract: join, data: jHash, isPending: jPending } = useWriteContract();
@@ -277,6 +279,13 @@ export function MobileGroupDetail({ address }: { address: `0x${string}` }) {
                   <XCircle className="w-5 h-5" strokeWidth={2} /> Reject
                 </button>
               </div>
+              <button onClick={() => finalizeVote({ address: CONTRACTS.votingEngine, abi: VotingEngineABI, functionName: "finalize", args: [address, BigInt(requestId)] })}
+                disabled={fPending || fConfirm}
+                className="w-full mt-3 flex items-center justify-center gap-2 border border-white/20 text-white/80 font-semibold py-3 rounded-2xl active:scale-[0.98] transition-transform disabled:opacity-50 text-sm">
+                {(fPending || fConfirm) && <Loader2 className="w-4 h-4 animate-spin" />}
+                {fPending ? "Confirm…" : fConfirm ? "Finalizing…" : fDone ? "Finalized ✓" : "Finalize Vote"}
+              </button>
+              <p className="text-white/35 text-xs mt-2 text-center">Anyone can finalize once the window closes or quorum is reached.</p>
             </div>
           ) : (
             <div className="bg-white rounded-2xl px-5 py-10 text-center">
