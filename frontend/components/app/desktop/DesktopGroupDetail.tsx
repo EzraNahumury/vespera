@@ -53,6 +53,17 @@ export function DesktopGroupDetail({ address }: { address: `0x${string}` }) {
   const { writeContract: invite, data: iHash, isPending: iPending } = useWriteContract();
   const { isLoading: iConfirming, isSuccess: iDone } = useWaitForTransactionReceipt({ hash: iHash });
 
+  const inviteList = inviteAddr.split(",").map(s => s.trim()).filter(Boolean);
+  const validInvites = inviteList.filter(a => isAddress(a)) as `0x${string}`[];
+  const canInvite = validInvites.length > 0 && validInvites.length === inviteList.length;
+  function handleInvite() {
+    if (validInvites.length === 1) {
+      invite({ address, abi: ArisanGroupABI, functionName: "invite", args: [validInvites[0]] });
+    } else {
+      invite({ address, abi: ArisanGroupABI, functionName: "inviteBatch", args: [validInvites] });
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#F5F5F5] px-6 py-10">
       <div className="max-w-[88rem] mx-auto">
@@ -87,22 +98,22 @@ export function DesktopGroupDetail({ address }: { address: `0x${string}` }) {
                   <UserPlus className="w-4 h-4 text-black/40" />
                   <h2 className="text-black text-xl font-medium">Invite Member</h2>
                 </div>
-                <p className="text-black/50 text-sm mb-4">As the group founder, invite members by wallet address.</p>
+                <p className="text-black/50 text-sm mb-4">As the group founder, invite members by wallet address. Separate multiple addresses with commas.</p>
                 <div className="flex gap-3">
                   <input
                     type="text"
-                    placeholder="0x… wallet address"
+                    placeholder="0x… (comma-separate for multiple)"
                     value={inviteAddr}
                     onChange={e => setInviteAddr(e.target.value)}
                     className="flex-1 rounded-xl border border-black/10 px-4 py-3 text-sm font-mono focus:outline-none focus:border-[#86EFAC]"
                   />
                   <button
-                    onClick={() => invite({ address, abi: ArisanGroupABI, functionName: "invite", args: [inviteAddr as `0x${string}`] })}
-                    disabled={iPending || iConfirming || !isAddress(inviteAddr)}
+                    onClick={handleInvite}
+                    disabled={iPending || iConfirming || !canInvite}
                     className="flex items-center justify-center gap-2 bg-[#86EFAC] text-black font-medium px-6 py-3 rounded-xl hover:bg-[#4ADE80] transition-colors disabled:opacity-50 shrink-0"
                   >
                     {(iPending || iConfirming) && <Loader className="w-4 h-4 animate-spin" />}
-                    {iPending ? "Confirm…" : iConfirming ? "Inviting…" : iDone ? "Invited ✓" : "Invite"}
+                    {iPending ? "Confirm…" : iConfirming ? "Inviting…" : iDone ? "Invited ✓" : validInvites.length > 1 ? `Invite ${validInvites.length}` : "Invite"}
                   </button>
                 </div>
               </div>

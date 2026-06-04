@@ -57,6 +57,17 @@ export function MobileGroupDetail({ address }: { address: `0x${string}` }) {
   const { writeContract: invite, data: iHash, isPending: iPending } = useWriteContract();
   const { isLoading: iConfirm, isSuccess: iDone } = useWaitForTransactionReceipt({ hash: iHash });
 
+  const inviteList = inviteAddr.split(",").map(s => s.trim()).filter(Boolean);
+  const validInvites = inviteList.filter(a => isAddress(a)) as `0x${string}`[];
+  const canInvite = validInvites.length > 0 && validInvites.length === inviteList.length;
+  function handleInvite() {
+    if (validInvites.length === 1) {
+      invite({ address, abi: ArisanGroupABI, functionName: "invite", args: [validInvites[0]] });
+    } else {
+      invite({ address, abi: ArisanGroupABI, functionName: "inviteBatch", args: [validInvites] });
+    }
+  }
+
   const TABS: { id: Tab; label: string }[] = [
     { id: "overview", label: "Overview" },
     { id: "deposit",  label: "Deposit" },
@@ -134,18 +145,18 @@ export function MobileGroupDetail({ address }: { address: `0x${string}` }) {
                 </div>
                 <input
                   type="text"
-                  placeholder="0x… wallet address"
+                  placeholder="0x… (comma-separate for multiple)"
                   value={inviteAddr}
                   onChange={e => setInviteAddr(e.target.value)}
                   className="w-full bg-[#F2F2F7] rounded-xl px-3 py-3 text-sm font-mono text-black outline-none placeholder:text-black/25 mb-2"
                 />
                 <button
-                  onClick={() => invite({ address, abi: ArisanGroupABI, functionName: "invite", args: [inviteAddr as `0x${string}`] })}
-                  disabled={iPending || iConfirm || !isAddress(inviteAddr)}
+                  onClick={handleInvite}
+                  disabled={iPending || iConfirm || !canInvite}
                   className="w-full flex items-center justify-center gap-2 bg-[#86EFAC] text-black font-semibold py-3 rounded-xl text-sm disabled:opacity-50 active:scale-[0.98] transition-transform"
                 >
                   {(iPending || iConfirm) && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {iPending ? "Confirm…" : iConfirm ? "Inviting…" : iDone ? "Invited ✓" : "Send Invite"}
+                  {iPending ? "Confirm…" : iConfirm ? "Inviting…" : iDone ? "Invited ✓" : validInvites.length > 1 ? `Invite ${validInvites.length}` : "Send Invite"}
                 </button>
               </div>
             )}
