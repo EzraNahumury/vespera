@@ -61,7 +61,7 @@ export function MobileCreateGroup() {
       </div>
 
       {!isConnected ? (
-        <div className="mx-4 mt-4 bg-white rounded-2xl px-5 py-8 text-center">
+        <div className="mx-4 mt-4 bg-white rounded-2xl card-shadow px-5 py-8 text-center">
           <p className="text-black font-semibold">Connect wallet to continue</p>
         </div>
       ) : (
@@ -70,7 +70,7 @@ export function MobileCreateGroup() {
           {/* Token */}
           <div>
             <p className="text-xs font-semibold text-black/40 uppercase tracking-widest mb-2 px-1">Deposit Token</p>
-            <div className="bg-white rounded-2xl overflow-hidden divide-y divide-black/[0.06]">
+            <div className="bg-white rounded-2xl card-shadow overflow-hidden divide-y divide-black/[0.06]">
               {TOKEN_OPTIONS.map(({ label, value }) => (
                 <button key={value} onClick={() => setToken(value)}
                   className="w-full flex items-center justify-between px-4 py-4 active:bg-black/5 transition-colors">
@@ -98,7 +98,7 @@ export function MobileCreateGroup() {
             <p className="text-xs font-semibold text-black/40 uppercase tracking-widest mb-2 px-1">
               Deposit Amount <span className="normal-case font-normal">({TOKEN_LABELS[token] ?? "token"} per round)</span>
             </p>
-            <div className="bg-white rounded-2xl overflow-hidden">
+            <div className="bg-white rounded-2xl card-shadow overflow-hidden">
               <div className="flex items-center px-4">
                 <span className="text-black/30 text-lg font-medium mr-2">{token === TOKENS.USDC || token === TOKENS.USDT ? "$" : "𝐶"}</span>
                 <input
@@ -134,7 +134,7 @@ export function MobileCreateGroup() {
           {/* Round duration */}
           <div>
             <p className="text-xs font-semibold text-black/40 uppercase tracking-widest mb-2 px-1">Round Duration</p>
-            <div className="bg-white rounded-2xl overflow-hidden divide-y divide-black/[0.06]">
+            <div className="bg-white rounded-2xl card-shadow overflow-hidden divide-y divide-black/[0.06]">
               {DURATION_OPTIONS.map(({ label, days }) => (
                 <button key={days} onClick={() => setRoundDays(days)}
                   className="w-full flex items-center justify-between px-4 py-4 active:bg-black/5 transition-colors">
@@ -154,7 +154,7 @@ export function MobileCreateGroup() {
           {/* Group name */}
           <div>
             <p className="text-xs font-semibold text-black/40 uppercase tracking-widest mb-2 px-1">Group Name <span className="normal-case font-normal">(optional)</span></p>
-            <div className="bg-white rounded-2xl overflow-hidden">
+            <div className="bg-white rounded-2xl card-shadow overflow-hidden">
               <input
                 type="text"
                 value={metaURI}

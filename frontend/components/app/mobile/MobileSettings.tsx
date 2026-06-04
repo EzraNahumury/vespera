@@ -54,7 +54,7 @@ export function MobileSettings() {
         {/* ── Account ── */}
         <div>
           <p className="text-xs font-semibold text-black/40 uppercase tracking-widest mb-2 px-1">Account</p>
-          <div className="bg-white rounded-2xl overflow-hidden divide-y divide-black/[0.06]">
+          <div className="bg-white rounded-2xl card-shadow overflow-hidden divide-y divide-black/[0.06]">
             {isConnected && address ? (
               <>
                 {/* Wallet address row */}
@@ -98,7 +98,7 @@ export function MobileSettings() {
             Determines how your AI Reviewer votes on withdrawals. Stored on-chain via AgentRegistry.
           </p>
 
-          <div className="bg-white rounded-2xl overflow-hidden divide-y divide-black/[0.06] mb-3">
+          <div className="bg-white rounded-2xl card-shadow overflow-hidden divide-y divide-black/[0.06] mb-3">
             {AGENT_TYPES.map((agent) => {
               const Icon = agentIcons[agent.id];
               const isSelected = selectedAgent === agent.id;
@@ -152,7 +152,7 @@ export function MobileSettings() {
         {/* ── About ── */}
         <div>
           <p className="text-xs font-semibold text-black/40 uppercase tracking-widest mb-2 px-1">About</p>
-          <div className="bg-white rounded-2xl overflow-hidden divide-y divide-black/[0.06]">
+          <div className="bg-white rounded-2xl card-shadow overflow-hidden divide-y divide-black/[0.06]">
             {[
               { label: "Protocol",  value: "Vespera v1.0.0" },
               { label: "Chain",     value: "Celo Mainnet" },
@@ -166,7 +166,7 @@ export function MobileSettings() {
             ))}
           </div>
 
-          <div className="bg-white rounded-2xl overflow-hidden divide-y divide-black/[0.06] mt-3">
+          <div className="bg-white rounded-2xl card-shadow overflow-hidden divide-y divide-black/[0.06] mt-3">
             {[
               { label: "GitHub", href: "https://github.com/EzraNahumury/vespera", icon: GitBranch },
               { label: "Celoscan", href: "https://celoscan.io", icon: ExternalLink },
@@ -186,7 +186,7 @@ export function MobileSettings() {
         {/* ── Logout ── */}
         {isConnected && (
           <div>
-            <div className="bg-white rounded-2xl overflow-hidden">
+            <div className="bg-white rounded-2xl card-shadow overflow-hidden">
               <button onClick={() => disconnect()}
                 className="w-full flex items-center gap-3 px-4 py-4 active:bg-red-50 transition-colors text-left">
                 <div className="w-9 h-9 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
