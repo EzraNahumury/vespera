@@ -1,15 +1,17 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { Aurora } from "@/components/ui/Aurora";
+import { DotGrid } from "@/components/ui/DotGrid";
 
 export function CTASection() {
   return (
     <section className="bg-[#F5F5F5] px-4 md:px-6 py-16">
       <div className="max-w-[88rem] mx-auto">
-        <div className="rounded-3xl bg-[#14532D] px-8 md:px-14 py-14 md:py-16 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 overflow-hidden relative">
+        <div className="rounded-[28px] px-8 md:px-14 py-14 md:py-20 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 overflow-hidden relative">
 
-          {/* Decorative circles */}
-          <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-[#86EFAC]/5 pointer-events-none" />
-          <div className="absolute -bottom-20 -left-10 w-48 h-48 rounded-full bg-[#4ADE80]/5 pointer-events-none" />
+          {/* Aurora background */}
+          <Aurora />
+          <DotGrid />
 
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-4">
