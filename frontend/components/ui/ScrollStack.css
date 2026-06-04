@@ -26,17 +26,19 @@
 
 .scroll-stack-card {
   transform-origin: top center;
-  will-change: transform, filter;
+  /* will-change set via JS per card — only 'transform', never 'filter' */
   backface-visibility: hidden;
-  transform-style: preserve-3d;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  /* preserve-3d removed — causes sub-pixel flicker on some browsers */
+  /* box-shadow removed — triggers repaint on every transform frame */
   width: 100%;
   border-radius: 24px;
   box-sizing: border-box;
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
   position: relative;
   overflow: hidden;
+  /* Stable GPU layer from the start */
+  transform: translateZ(0);
+  /* Contain layout & paint to this element */
+  contain: layout style;
 }
 
 .scroll-stack-end {

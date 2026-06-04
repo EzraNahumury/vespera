@@ -152,29 +152,51 @@ export default function ScrollStack({
     cards.forEach((card, i) => {
       const el = card as HTMLElement;
       if (i < cards.length - 1) el.style.marginBottom = `${itemDistance}px`;
-      el.style.willChange = "transform, filter";
+      // Only promote to GPU layer — do NOT set will-change:filter (causes repaint flicker)
+      el.style.willChange = "transform";
       el.style.transformOrigin = "top center";
+      // Force GPU compositing layer from start to prevent layer promotion flicker
+      el.style.transform = "translateZ(0)";
     });
 
-    const easing = (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t));
-    const lenis = useWindowScroll
-      ? new Lenis({ duration: 1.2, easing, smoothWheel: true })
-      : new Lenis({ wrapper: scroller, content: scroller.querySelector(".scroll-stack-inner") as HTMLElement, duration: 1.2, easing, smoothWheel: true });
+    if (useWindowScroll) {
+      // Native scroll — no Lenis interception to avoid frame-lag flicker
+      const onScroll = () => { updateCardTransforms(); };
+      window.addEventListener("scroll", onScroll, { passive: true });
+      updateCardTransforms();
 
-    lenis.on("scroll", updateCardTransforms);
-    const raf = (time: number) => { lenis.raf(time); animationFrameRef.current = requestAnimationFrame(raf); };
-    animationFrameRef.current = requestAnimationFrame(raf);
-    lenisRef.current = lenis;
-    updateCardTransforms();
+      return () => {
+        window.removeEventListener("scroll", onScroll);
+        cardsRef.current = [];
+        tc.clear();
+        stackCompletedRef.current = false;
+        isUpdatingRef.current = false;
+      };
+    } else {
+      // Internal scroll container — Lenis for smooth UX inside the div
+      const easing = (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t));
+      const lenis = new Lenis({
+        wrapper: scroller,
+        content: scroller.querySelector(".scroll-stack-inner") as HTMLElement,
+        duration: 1.2,
+        easing,
+        smoothWheel: true,
+      });
+      lenis.on("scroll", updateCardTransforms);
+      const raf = (time: number) => { lenis.raf(time); animationFrameRef.current = requestAnimationFrame(raf); };
+      animationFrameRef.current = requestAnimationFrame(raf);
+      lenisRef.current = lenis;
+      updateCardTransforms();
 
-    return () => {
-      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-      lenis.destroy();
-      cardsRef.current = [];
-      tc.clear();
-      stackCompletedRef.current = false;
-      isUpdatingRef.current = false;
-    };
+      return () => {
+        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+        lenis.destroy();
+        cardsRef.current = [];
+        tc.clear();
+        stackCompletedRef.current = false;
+        isUpdatingRef.current = false;
+      };
+    }
   }, [itemDistance, itemScale, itemStackDistance, stackPosition, scaleEndPosition, baseScale, rotationAmount, blurAmount, useWindowScroll, updateCardTransforms]);
 
   const modeClass = useWindowScroll
