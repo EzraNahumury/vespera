@@ -5,6 +5,7 @@ import { useState } from "react";
 import { ArisanGroupABI } from "@/abis/ArisanGroup";
 import { VotingEngineABI } from "@/abis/VotingEngine";
 import { TOKEN_LABELS, CONTRACTS } from "@/lib/chain";
+import { VoteStatus } from "@/components/app/VoteStatus";
 import { Loader2, CheckCircle2, XCircle, ChevronLeft, Clock3, UserPlus } from "lucide-react";
 import Link from "next/link";
 
@@ -264,9 +265,10 @@ export function MobileGroupDetail({ address }: { address: `0x${string}` }) {
                 <span className="text-[#86EFAC] text-sm font-semibold">Vote Active</span>
               </div>
               <h3 className="text-white text-xl font-bold mb-1">Request #{requestId}</h3>
-              <p className="text-white/50 text-sm mb-6 leading-relaxed">
+              <p className="text-white/50 text-sm mb-1 leading-relaxed">
                 AI has validated this request. Your vote is weighted by your reputation score.
               </p>
+              <VoteStatus group={address} requestId={requestId} />
               <div className="grid grid-cols-2 gap-3">
                 <button onClick={() => castVote({ address: CONTRACTS.votingEngine, abi: VotingEngineABI, functionName: "castVote", args: [address, BigInt(requestId), true] })}
                   disabled={voting}
