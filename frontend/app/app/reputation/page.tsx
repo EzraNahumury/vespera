@@ -117,7 +117,12 @@ function ReputationContent() {
       </div>
 
       {/* Soulbound Badges */}
-      <h2 className="text-black text-xl font-medium mb-4">Soulbound Badges</h2>
+      <div className="flex items-baseline gap-3 mb-4">
+        <h2 className="text-black text-xl font-medium">Soulbound Badges</h2>
+        <span className="text-sm text-black/40">
+          {BADGE_LABELS.filter((_, i) => owned(i)).length} / {BADGE_LABELS.length} earned
+        </span>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {BADGE_LABELS.map((label, i) => {
           const has = owned(i);
