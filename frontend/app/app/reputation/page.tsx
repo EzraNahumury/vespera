@@ -86,8 +86,8 @@ function ReputationContent() {
       </div>
 
       {/* Score breakdown */}
-      <div className="rounded-2xl bg-white border border-black/5 p-6 mb-6">
-        <h2 className="text-black font-medium mb-5">Score Breakdown</h2>
+      <div className="rounded-2xl bg-white card-shadow p-6 mb-6">
+        <h2 className="text-black font-semibold mb-5">Score Breakdown</h2>
         <div className="space-y-3">
           {[
             { label: "Deposit Consistency", weight: 40, score: score * 0.4 },
@@ -129,8 +129,8 @@ function ReputationContent() {
           return (
             <div
               key={i}
-              className={`rounded-2xl p-5 border flex items-center gap-4 transition-colors ${
-                has ? "bg-white border-[#86EFAC]" : "bg-white/60 border-black/5"
+              className={`rounded-2xl p-5 flex items-center gap-4 transition-colors ${
+                has ? "bg-white border-2 border-[#86EFAC]" : "bg-white/60 card-shadow"
               }`}
             >
               <div
@@ -156,7 +156,7 @@ function ReputationContent() {
 
 export default function ReputationPage() {
   return (
-    <div className="min-h-screen bg-[#F5F5F5] pb-24 md:pb-0">
+    <div className="min-h-screen bg-[#F2F2F7] pb-24 md:pb-0">
       <ReputationContent />
     </div>
   );
