@@ -1,10 +1,8 @@
 .scroll-stack-scroller {
   position: relative;
   width: 100%;
-  /* No overflow-y here — overflow is handled per variant below */
 }
 
-/* Internal scroll mode (mobile only) */
 .scroll-stack-scroller--internal {
   height: 100%;
   overflow-y: auto;
@@ -14,7 +12,6 @@
   will-change: scroll-position;
 }
 
-/* Window scroll mode — let window handle scrolling */
 .scroll-stack-scroller--window {
   overflow: visible;
 }
@@ -26,19 +23,16 @@
 
 .scroll-stack-card {
   transform-origin: top center;
-  /* will-change set via JS per card — only 'transform', never 'filter' */
-  backface-visibility: hidden;
-  /* preserve-3d removed — causes sub-pixel flicker on some browsers */
-  /* box-shadow removed — triggers repaint on every transform frame */
+  will-change: transform;
+  /* No box-shadow — triggers repaint every RAF frame */
+  /* No backface-visibility — sub-pixel flicker on some GPUs */
+  /* No transform-style:preserve-3d — same issue */
+  /* No contain — interferes with z-index stacking */
   width: 100%;
   border-radius: 24px;
   box-sizing: border-box;
   position: relative;
   overflow: hidden;
-  /* Stable GPU layer from the start */
-  transform: translateZ(0);
-  /* Contain layout & paint to this element */
-  contain: layout style;
 }
 
 .scroll-stack-end {

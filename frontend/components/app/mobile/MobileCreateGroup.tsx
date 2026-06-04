@@ -4,17 +4,19 @@ import { useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagm
 import { parseUnits } from "viem";
 import { CONTRACTS, TOKENS, TOKEN_LABELS } from "@/lib/chain";
 import { GroupRegistryABI } from "@/abis/GroupRegistry";
-import { CheckCircle, Loader, ChevronLeft } from "lucide-react";
+import { CheckCircle2, Loader2, ChevronLeft } from "lucide-react";
 import Link from "next/link";
 
 const TOKEN_OPTIONS = Object.entries(TOKENS).map(([k, v]) => ({ label: k, value: v as `0x${string}` }));
+const MEMBER_OPTIONS = [5, 7, 10, 12, 15];
+const DURATION_OPTIONS = [{ label: "1 week", days: 7 }, { label: "30 days", days: 30 }, { label: "90 days", days: 90 }];
 
 export function MobileCreateGroup() {
   const { isConnected } = useAccount();
   const [token, setToken] = useState<`0x${string}`>(TOKENS.CELO);
   const [amount, setAmount] = useState("");
-  const [maxMembers, setMaxMembers] = useState("10");
-  const [roundDays, setRoundDays] = useState("30");
+  const [maxMembers, setMaxMembers] = useState(10);
+  const [roundDays, setRoundDays] = useState(30);
   const [metaURI, setMetaURI] = useState("");
 
   const { writeContract, data: hash, isPending } = useWriteContract();
@@ -26,93 +28,151 @@ export function MobileCreateGroup() {
       address: CONTRACTS.groupRegistry,
       abi: GroupRegistryABI,
       functionName: "createGroup",
-      args: [token, parseUnits(amount, 18), BigInt(maxMembers), BigInt(Number(roundDays) * 86400), metaURI],
+      args: [token, parseUnits(amount, 18), BigInt(maxMembers), BigInt(roundDays * 86400), metaURI],
     });
   }
 
+  if (isSuccess) return (
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center" style={{ backgroundColor: "#F2F2F7" }}>
+      <div className="w-20 h-20 rounded-full bg-[#86EFAC] flex items-center justify-center mb-5 shadow-lg shadow-green-200">
+        <CheckCircle2 className="w-10 h-10 text-[#14532D]" strokeWidth={1.5} />
+      </div>
+      <h2 className="text-2xl font-bold text-black mb-2">Group Created!</h2>
+      <p className="text-black/50 text-sm mb-8">Your arisan is now live on Celo.</p>
+      <Link href="/app" className="bg-[#86EFAC] text-black font-semibold px-8 py-3 rounded-full text-base">
+        Back to Dashboard
+      </Link>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-[#F5F5F5] pb-24">
-      <div className="bg-[#F5F5F5] px-4 pt-4 pb-2 flex items-center gap-3 sticky top-16 z-10 border-b border-black/5">
-        <Link href="/app" className="p-2 rounded-xl hover:bg-black/5 transition-colors">
-          <ChevronLeft className="w-5 h-5 text-black" />
+    <div className="min-h-screen" style={{ backgroundColor: "#F2F2F7" }}>
+      {/* Back header */}
+      <div className="flex items-center gap-2 px-2 pt-3 pb-1">
+        <Link href="/app" className="flex items-center gap-0.5 text-[#16A34A] font-medium px-2 py-2">
+          <ChevronLeft className="w-5 h-5" />
+          <span className="text-sm">Home</span>
         </Link>
-        <h1 className="text-xl font-medium text-black">New Group</h1>
       </div>
 
-      <div className="px-4 pt-5">
-        {!isConnected ? (
-          <div className="rounded-2xl bg-[#86EFAC]/20 border border-[#86EFAC] p-6 text-center mt-4">
-            <p className="text-black font-medium">Connect your wallet first.</p>
-          </div>
-        ) : isSuccess ? (
-          <div className="rounded-2xl bg-[#14532D] p-8 text-center mt-4">
-            <CheckCircle className="w-12 h-12 text-[#86EFAC] mx-auto mb-3" />
-            <p className="text-white text-xl font-medium">Group Created!</p>
-            <p className="text-white/50 text-sm mt-1">Your arisan is live on Celo.</p>
-            <Link href="/app" className="inline-block mt-6 bg-[#86EFAC] text-black px-6 py-2.5 rounded-full font-medium">
-              Back to Dashboard
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-5">
-            <div>
-              <label className="block text-xs font-medium text-black/50 uppercase tracking-wider mb-2">Token</label>
-              <div className="flex gap-2">
-                {TOKEN_OPTIONS.map(({ label, value }) => (
-                  <button key={value} onClick={() => setToken(value)}
-                    className={`flex-1 py-3 rounded-2xl text-sm font-medium transition-colors ${token === value ? "bg-[#86EFAC] text-black" : "bg-white text-black/50"}`}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-black/50 uppercase tracking-wider mb-2">
-                Amount ({TOKEN_LABELS[token]})
-              </label>
-              <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="e.g. 10"
-                className="w-full rounded-2xl bg-white border border-black/5 px-4 py-4 text-base focus:outline-none focus:border-[#86EFAC]" />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-black/50 uppercase tracking-wider mb-2">Max Members (5–15)</label>
-              <div className="flex gap-2 flex-wrap">
-                {[5,7,10,12,15].map(n => (
-                  <button key={n} onClick={() => setMaxMembers(String(n))}
-                    className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${maxMembers === String(n) ? "bg-[#86EFAC] text-black" : "bg-white text-black/50"}`}>
-                    {n}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-black/50 uppercase tracking-wider mb-2">Round Duration</label>
-              <div className="flex gap-2">
-                {[{l:"7 days",v:"7"},{l:"30 days",v:"30"},{l:"90 days",v:"90"}].map(({l,v}) => (
-                  <button key={v} onClick={() => setRoundDays(v)}
-                    className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${roundDays === v ? "bg-[#86EFAC] text-black" : "bg-white text-black/50"}`}>
-                    {l}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-black/50 uppercase tracking-wider mb-2">Group Name (optional)</label>
-              <input type="text" value={metaURI} onChange={e => setMetaURI(e.target.value)} placeholder="My Arisan Group"
-                className="w-full rounded-2xl bg-white border border-black/5 px-4 py-4 text-base focus:outline-none focus:border-[#86EFAC]" />
-            </div>
-
-            <button onClick={handleCreate} disabled={isPending || isConfirming || !amount}
-              className="w-full flex items-center justify-center gap-2 bg-[#86EFAC] text-black font-medium py-4 rounded-2xl hover:bg-[#4ADE80] transition-colors disabled:opacity-50 mt-2">
-              {(isPending || isConfirming) && <Loader className="w-4 h-4 animate-spin" />}
-              {isPending ? "Confirm in wallet…" : isConfirming ? "Creating…" : "Create Group"}
-            </button>
-          </div>
-        )}
+      <div className="px-4 pb-2">
+        <h1 className="text-3xl font-bold text-black tracking-tight">New Group</h1>
+        <p className="text-sm text-black/45 mt-1">Deploy an arisan group on Celo</p>
       </div>
+
+      {!isConnected ? (
+        <div className="mx-4 mt-4 bg-white rounded-2xl px-5 py-8 text-center">
+          <p className="text-black font-semibold">Connect wallet to continue</p>
+        </div>
+      ) : (
+        <div className="px-4 space-y-5 mt-4 pb-8">
+
+          {/* Token */}
+          <div>
+            <p className="text-xs font-semibold text-black/40 uppercase tracking-widest mb-2 px-1">Deposit Token</p>
+            <div className="bg-white rounded-2xl overflow-hidden divide-y divide-black/[0.06]">
+              {TOKEN_OPTIONS.map(({ label, value }) => (
+                <button key={value} onClick={() => setToken(value)}
+                  className="w-full flex items-center justify-between px-4 py-4 active:bg-black/5 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                      token === value ? "bg-[#86EFAC] text-[#14532D]" : "bg-[#F2F2F7] text-black/50"}`}>
+                      {label[0]}
+                    </div>
+                    <span className={`font-medium text-sm ${token === value ? "text-black" : "text-black/60"}`}>{label}</span>
+                  </div>
+                  {token === value && (
+                    <div className="w-5 h-5 rounded-full bg-[#16A34A] flex items-center justify-center">
+                      <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                        <path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Amount */}
+          <div>
+            <p className="text-xs font-semibold text-black/40 uppercase tracking-widest mb-2 px-1">
+              Deposit Amount <span className="normal-case font-normal">({TOKEN_LABELS[token] ?? "token"} per round)</span>
+            </p>
+            <div className="bg-white rounded-2xl overflow-hidden">
+              <div className="flex items-center px-4">
+                <span className="text-black/30 text-lg font-medium mr-2">{token === TOKENS.USDC || token === TOKENS.USDT ? "$" : "𝐶"}</span>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={amount}
+                  onChange={e => setAmount(e.target.value)}
+                  placeholder="0.00"
+                  className="flex-1 py-4 text-xl font-semibold text-black bg-transparent outline-none placeholder:text-black/20"
+                />
+                <span className="text-black/40 text-sm font-medium">{TOKEN_LABELS[token]}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Max members */}
+          <div>
+            <p className="text-xs font-semibold text-black/40 uppercase tracking-widest mb-2 px-1">Max Members</p>
+            <div className="flex gap-2">
+              {MEMBER_OPTIONS.map(n => (
+                <button key={n} onClick={() => setMaxMembers(n)}
+                  className={`flex-1 py-3 rounded-2xl text-sm font-semibold transition-all duration-150 ${
+                    maxMembers === n
+                      ? "bg-[#14532D] text-white shadow-sm"
+                      : "bg-white text-black/50 active:bg-black/5"
+                  }`}>
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Round duration */}
+          <div>
+            <p className="text-xs font-semibold text-black/40 uppercase tracking-widest mb-2 px-1">Round Duration</p>
+            <div className="bg-white rounded-2xl overflow-hidden divide-y divide-black/[0.06]">
+              {DURATION_OPTIONS.map(({ label, days }) => (
+                <button key={days} onClick={() => setRoundDays(days)}
+                  className="w-full flex items-center justify-between px-4 py-4 active:bg-black/5 transition-colors">
+                  <span className={`font-medium text-sm ${roundDays === days ? "text-black" : "text-black/55"}`}>{label}</span>
+                  {roundDays === days && (
+                    <div className="w-5 h-5 rounded-full bg-[#16A34A] flex items-center justify-center">
+                      <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                        <path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Group name */}
+          <div>
+            <p className="text-xs font-semibold text-black/40 uppercase tracking-widest mb-2 px-1">Group Name <span className="normal-case font-normal">(optional)</span></p>
+            <div className="bg-white rounded-2xl overflow-hidden">
+              <input
+                type="text"
+                value={metaURI}
+                onChange={e => setMetaURI(e.target.value)}
+                placeholder="My Arisan Group"
+                className="w-full px-4 py-4 text-sm text-black bg-transparent outline-none placeholder:text-black/25"
+              />
+            </div>
+          </div>
+
+          {/* Submit */}
+          <button onClick={handleCreate} disabled={isPending || isConfirming || !amount}
+            className="w-full flex items-center justify-center gap-2 bg-[#86EFAC] text-black font-bold py-4 rounded-2xl text-base disabled:opacity-50 active:scale-[0.98] transition-transform shadow-sm shadow-green-200">
+            {(isPending || isConfirming) && <Loader2 className="w-5 h-5 animate-spin" />}
+            {isPending ? "Confirm in wallet…" : isConfirming ? "Creating group…" : "Create Group"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

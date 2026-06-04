@@ -6,7 +6,7 @@ import { Providers } from "@/lib/providers";
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
 
 export const metadata: Metadata = {
-  title: "Vespera — Trustless Arisan On-Chain",
+  title: "Vespera",
   description: "AI-governed rotating savings protocol built on Celo.",
   other: {
     "talentapp:project_verification":

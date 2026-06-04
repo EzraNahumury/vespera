@@ -2,7 +2,7 @@
 import { useReadContracts } from "wagmi";
 import { ArisanGroupABI } from "@/abis/ArisanGroup";
 import { TOKEN_LABELS } from "@/lib/chain";
-import { Users } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { formatUnits } from "viem";
 import Link from "next/link";
 
@@ -14,43 +14,60 @@ export function GroupCard({ address }: { address: `0x${string}` }) {
       { address, abi: ArisanGroupABI, functionName: "depositToken" },
       { address, abi: ArisanGroupABI, functionName: "depositAmount" },
       { address, abi: ArisanGroupABI, functionName: "currentRound" },
+      { address, abi: ArisanGroupABI, functionName: "activeRequestId" },
     ],
   });
 
-  const memberCount = data?.[0]?.result ? Number(data[0].result) : 0;
-  const maxMembers = data?.[1]?.result ? Number(data[1].result) : 0;
-  const token = data?.[2]?.result as `0x${string}` | undefined;
-  const depositAmount = data?.[3]?.result as bigint | undefined;
+  const memberCount  = data?.[0]?.result ? Number(data[0].result) : 0;
+  const maxMembers   = data?.[1]?.result ? Number(data[1].result) : 0;
+  const token        = data?.[2]?.result as `0x${string}` | undefined;
+  const depositAmt   = data?.[3]?.result as bigint | undefined;
   const currentRound = data?.[4]?.result ? Number(data[4].result) : 1;
+  const hasRequest   = data?.[5]?.result ? Number(data[5].result) > 0 : false;
 
   const tokenLabel = token ? (TOKEN_LABELS[token] ?? "ERC-20") : "—";
-  const amount = depositAmount ? formatUnits(depositAmount, 18) : "—";
+  const amount     = depositAmt ? formatUnits(depositAmt, 18) : "—";
+  const fillPct    = memberCount && maxMembers ? (memberCount / maxMembers) * 100 : 0;
 
   return (
-    <Link href={`/app/groups/${address}`} className="block rounded-2xl bg-white p-6 hover:shadow-md transition-shadow border border-black/5">
-      <div className="flex items-start justify-between mb-4">
-        <div className="w-10 h-10 rounded-full bg-[#86EFAC] flex items-center justify-center">
-          <Users className="w-5 h-5 text-black" />
+    <Link href={`/app/groups/${address}`}
+      className="block bg-white rounded-2xl overflow-hidden active:bg-black/[0.03] transition-colors"
+      style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 0 0 0.5px rgba(0,0,0,0.06)" }}>
+      <div className="px-4 py-4 flex items-center gap-4">
+        {/* Avatar */}
+        <div className="w-11 h-11 rounded-2xl bg-[#86EFAC] flex items-center justify-center shrink-0 text-xl">
+          🏦
         </div>
-        <span className="text-xs text-black/40 font-mono">{address.slice(0, 6)}…{address.slice(-4)}</span>
-      </div>
-      <div className="space-y-1 mb-4">
-        {[
-          { label: "Members", value: `${memberCount} / ${maxMembers}` },
-          { label: "Deposit", value: `${amount} ${tokenLabel}` },
-          { label: "Round", value: `#${currentRound}` },
-        ].map(({ label, value }) => (
-          <div key={label} className="flex justify-between text-sm">
-            <span className="text-black/50">{label}</span>
-            <span className="font-medium text-black">{value}</span>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-0.5">
+            <p className="font-semibold text-black text-sm truncate">
+              {address.slice(0, 6)}…{address.slice(-4)}
+            </p>
+            <div className="flex items-center gap-1.5 shrink-0 ml-2">
+              {hasRequest && (
+                <span className="w-2 h-2 rounded-full bg-red-500" />
+              )}
+              <ChevronRight className="w-4 h-4 text-black/20" />
+            </div>
           </div>
-        ))}
-      </div>
-      {memberCount > 0 && maxMembers > 0 && (
-        <div className="h-1.5 rounded-full bg-black/5 overflow-hidden">
-          <div className="h-full rounded-full bg-[#86EFAC]" style={{ width: `${(memberCount / maxMembers) * 100}%` }} />
+
+          <div className="flex items-center gap-3 text-xs text-black/45">
+            <span>{memberCount}/{maxMembers} members</span>
+            <span className="w-0.5 h-0.5 rounded-full bg-black/20" />
+            <span>{amount} {tokenLabel}</span>
+            <span className="w-0.5 h-0.5 rounded-full bg-black/20" />
+            <span>Round #{currentRound}</span>
+          </div>
+
+          {/* Fill bar */}
+          <div className="mt-2 h-1 rounded-full bg-black/[0.06] overflow-hidden">
+            <div className="h-full rounded-full bg-[#86EFAC] transition-all duration-500"
+              style={{ width: `${fillPct}%` }} />
+          </div>
         </div>
-      )}
+      </div>
     </Link>
   );
 }
