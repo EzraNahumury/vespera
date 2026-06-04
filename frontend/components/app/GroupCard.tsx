@@ -31,8 +31,7 @@ export function GroupCard({ address }: { address: `0x${string}` }) {
 
   return (
     <Link href={`/app/groups/${address}`}
-      className="block bg-white rounded-2xl overflow-hidden active:bg-black/[0.03] transition-colors"
-      style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 0 0 0.5px rgba(0,0,0,0.06)" }}>
+      className="block bg-white rounded-2xl overflow-hidden card-shadow hover:shadow-md active:bg-black/[0.03] transition-all">
       <div className="px-4 py-4 flex items-center gap-4">
         {/* Avatar */}
         <div className="w-11 h-11 rounded-2xl bg-[#86EFAC] flex items-center justify-center shrink-0 text-xl">
