@@ -1,11 +1,11 @@
 "use client";
 import { useReadContracts, useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
-import { parseUnits, formatUnits } from "viem";
+import { parseUnits, formatUnits, isAddress } from "viem";
 import { useState } from "react";
 import { ArisanGroupABI } from "@/abis/ArisanGroup";
 import { VotingEngineABI } from "@/abis/VotingEngine";
 import { TOKEN_LABELS, CONTRACTS } from "@/lib/chain";
-import { Loader2, CheckCircle2, XCircle, ChevronLeft, Clock3 } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, ChevronLeft, Clock3, UserPlus } from "lucide-react";
 import Link from "next/link";
 
 type Tab = "overview" | "deposit" | "vote";
@@ -15,6 +15,7 @@ export function MobileGroupDetail({ address }: { address: `0x${string}` }) {
   const [tab, setTab] = useState<Tab>("overview");
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawReason, setWithdrawReason] = useState("");
+  const [inviteAddr, setInviteAddr] = useState("");
 
   const { data } = useReadContracts({
     contracts: [
@@ -25,6 +26,7 @@ export function MobileGroupDetail({ address }: { address: `0x${string}` }) {
       { address, abi: ArisanGroupABI, functionName: "currentRound" },
       { address, abi: ArisanGroupABI, functionName: "activeRequestId" },
       { address, abi: ArisanGroupABI, functionName: "getMembers" },
+      { address, abi: ArisanGroupABI, functionName: "creator" },
     ],
   });
   const { data: memberCheck } = useReadContracts({
@@ -39,7 +41,9 @@ export function MobileGroupDetail({ address }: { address: `0x${string}` }) {
   const round       = data?.[4]?.result ? Number(data[4].result) : 1;
   const requestId   = data?.[5]?.result ? Number(data[5].result) : 0;
   const members     = data?.[6]?.result as `0x${string}`[] | undefined;
+  const creator     = data?.[7]?.result as `0x${string}` | undefined;
   const isMember    = memberCheck?.[0]?.result as boolean | undefined;
+  const isCreator   = !!creator && !!wallet && creator.toLowerCase() === wallet.toLowerCase();
 
   const tokenLabel  = token ? (TOKEN_LABELS[token] ?? "token") : "—";
   const depositFmt  = depositAmt ? formatUnits(depositAmt, 18) : "—";
@@ -50,6 +54,8 @@ export function MobileGroupDetail({ address }: { address: `0x${string}` }) {
   const { writeContract: reqW, data: wHash, isPending: wPending } = useWriteContract();
   const { isLoading: wConfirm, isSuccess: wDone } = useWaitForTransactionReceipt({ hash: wHash });
   const { writeContract: castVote, isPending: voting } = useWriteContract();
+  const { writeContract: invite, data: iHash, isPending: iPending } = useWriteContract();
+  const { isLoading: iConfirm, isSuccess: iDone } = useWaitForTransactionReceipt({ hash: iHash });
 
   const TABS: { id: Tab; label: string }[] = [
     { id: "overview", label: "Overview" },
@@ -120,6 +126,29 @@ export function MobileGroupDetail({ address }: { address: `0x${string}` }) {
         {/* ── Overview tab ── */}
         {tab === "overview" && (
           <div>
+            {isCreator && (
+              <div className="bg-white rounded-2xl px-4 py-4 mb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <UserPlus className="w-4 h-4 text-black/40" />
+                  <p className="font-semibold text-black text-sm">Invite Member</p>
+                </div>
+                <input
+                  type="text"
+                  placeholder="0x… wallet address"
+                  value={inviteAddr}
+                  onChange={e => setInviteAddr(e.target.value)}
+                  className="w-full bg-[#F2F2F7] rounded-xl px-3 py-3 text-sm font-mono text-black outline-none placeholder:text-black/25 mb-2"
+                />
+                <button
+                  onClick={() => invite({ address, abi: ArisanGroupABI, functionName: "invite", args: [inviteAddr as `0x${string}`] })}
+                  disabled={iPending || iConfirm || !isAddress(inviteAddr)}
+                  className="w-full flex items-center justify-center gap-2 bg-[#86EFAC] text-black font-semibold py-3 rounded-xl text-sm disabled:opacity-50 active:scale-[0.98] transition-transform"
+                >
+                  {(iPending || iConfirm) && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {iPending ? "Confirm…" : iConfirm ? "Inviting…" : iDone ? "Invited ✓" : "Send Invite"}
+                </button>
+              </div>
+            )}
             <p className="text-xs font-semibold text-black/40 uppercase tracking-widest mb-2 px-1">Members</p>
             <div className="bg-white rounded-2xl overflow-hidden divide-y divide-black/[0.06]">
               {members?.length ? members.map((m, i) => (
