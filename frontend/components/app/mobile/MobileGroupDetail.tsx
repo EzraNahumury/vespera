@@ -109,13 +109,13 @@ export function MobileGroupDetail({ address }: { address: `0x${string}` }) {
           { label: "Deposit",  value: `${depositFmt} ${tokenLabel}` },
           { label: "Request",  value: requestId ? `#${requestId} active` : "None" },
         ].map(({ label, value }) => (
-          <div key={label} className="bg-white rounded-2xl px-4 py-3.5">
+          <div key={label} className="bg-white rounded-2xl card-shadow px-4 py-3.5">
             <p className="text-xs text-black/40 mb-0.5">{label}</p>
             <p className="font-semibold text-black text-sm">{value}</p>
           </div>
         ))}
         {/* Fill bar spanning both cols */}
-        <div className="col-span-2 bg-white rounded-2xl px-4 py-3">
+        <div className="col-span-2 bg-white rounded-2xl card-shadow px-4 py-3">
           <div className="flex justify-between text-xs text-black/40 mb-1.5">
             <span>Group capacity</span>
             <span>{Math.round(fillPct)}%</span>
@@ -162,7 +162,7 @@ export function MobileGroupDetail({ address }: { address: `0x${string}` }) {
               </div>
             )}
             {isCreator && (
-              <div className="bg-white rounded-2xl px-4 py-4 mb-4">
+              <div className="bg-white rounded-2xl card-shadow px-4 py-4 mb-4">
                 <div className="flex items-center gap-2 mb-2">
                   <UserPlus className="w-4 h-4 text-black/40" />
                   <p className="font-semibold text-black text-sm">Invite Member</p>
@@ -185,7 +185,7 @@ export function MobileGroupDetail({ address }: { address: `0x${string}` }) {
               </div>
             )}
             <p className="text-xs font-semibold text-black/40 uppercase tracking-widest mb-2 px-1">Members</p>
-            <div className="bg-white rounded-2xl overflow-hidden divide-y divide-black/[0.06]">
+            <div className="bg-white rounded-2xl card-shadow overflow-hidden divide-y divide-black/[0.06]">
               {members?.length ? members.map((m, i) => (
                 <div key={m} className="flex items-center gap-3 px-4 py-3.5">
                   <div className="w-8 h-8 rounded-full bg-[#86EFAC]/30 flex items-center justify-center text-xs font-bold text-[#14532D] shrink-0">
@@ -208,7 +208,7 @@ export function MobileGroupDetail({ address }: { address: `0x${string}` }) {
           <div className="space-y-4">
             {isMember ? (
               <>
-                <div className="bg-white rounded-2xl px-5 py-5">
+                <div className="bg-white rounded-2xl card-shadow px-5 py-5">
                   <p className="text-xs text-black/40 mb-1">Fixed deposit this round</p>
                   <p className="text-3xl font-bold text-black">{depositFmt} <span className="text-lg font-medium text-black/50">{tokenLabel}</span></p>
                 </div>
@@ -221,7 +221,7 @@ export function MobileGroupDetail({ address }: { address: `0x${string}` }) {
                 </button>
 
                 {!requestId && (
-                  <div className="bg-white rounded-2xl overflow-hidden">
+                  <div className="bg-white rounded-2xl card-shadow overflow-hidden">
                     <div className="px-4 pt-5 pb-3 border-b border-black/[0.06]">
                       <p className="font-semibold text-black text-sm">Request Withdrawal</p>
                       <p className="text-xs text-black/40 mt-0.5">Submit a request for this round</p>
@@ -249,7 +249,7 @@ export function MobileGroupDetail({ address }: { address: `0x${string}` }) {
                 )}
               </>
             ) : (
-              <div className="bg-white rounded-2xl px-5 py-8 text-center">
+              <div className="bg-white rounded-2xl card-shadow px-5 py-8 text-center">
                 <p className="text-black/40 text-sm">You are not a member of this group.</p>
               </div>
             )}
@@ -290,7 +290,7 @@ export function MobileGroupDetail({ address }: { address: `0x${string}` }) {
               <p className="text-white/35 text-xs mt-2 text-center">Anyone can finalize once the window closes or quorum is reached.</p>
             </div>
           ) : (
-            <div className="bg-white rounded-2xl px-5 py-10 text-center">
+            <div className="bg-white rounded-2xl card-shadow px-5 py-10 text-center">
               <div className="text-3xl mb-3">🗳️</div>
               <p className="font-medium text-black/50 text-sm">No active vote</p>
               <p className="text-xs text-black/30 mt-1">Votes appear here when a withdrawal is requested</p>
