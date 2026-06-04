@@ -5,6 +5,7 @@ import { useState } from "react";
 import { ArisanGroupABI } from "@/abis/ArisanGroup";
 import { VotingEngineABI } from "@/abis/VotingEngine";
 import { TOKEN_LABELS, CONTRACTS } from "@/lib/chain";
+import { VoteStatus } from "@/components/app/VoteStatus";
 import { Loader, CheckCircle, XCircle, Users, Clock, ArrowLeft, UserPlus } from "lucide-react";
 import Link from "next/link";
 
@@ -184,7 +185,8 @@ export function DesktopGroupDetail({ address }: { address: `0x${string}` }) {
               <div className="rounded-2xl bg-[#14532D] p-7">
                 <div className="flex items-center gap-2 mb-2"><Clock className="w-4 h-4 text-[#86EFAC]" /><p className="text-[#86EFAC] text-sm font-medium">Vote Active</p></div>
                 <h2 className="text-white text-xl font-medium mb-2">Request #{activeRequestId}</h2>
-                <p className="text-white/50 text-sm mb-5">AI has validated this request. Cast your reputation-weighted vote.</p>
+                <p className="text-white/50 text-sm mb-1">AI has validated this request. Cast your reputation-weighted vote.</p>
+                <VoteStatus group={address} requestId={activeRequestId} />
                 <div className="flex gap-3">
                   <button onClick={() => castVote({ address: CONTRACTS.votingEngine, abi: VotingEngineABI, functionName: "castVote", args: [address, BigInt(activeRequestId), true] })}
                     disabled={voting} className="flex-1 flex items-center justify-center gap-2 bg-[#86EFAC] text-black font-medium py-3 rounded-xl hover:bg-[#4ADE80] transition-colors disabled:opacity-50">
