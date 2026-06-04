@@ -132,12 +132,13 @@ function MobileSteps() {
   );
 }
 
-/* ─── Desktop: ScrollStack ─── */
+/* ─── Desktop: ScrollStack (window scroll — no trapped scroll) ─── */
 function DesktopSteps() {
   return (
-    <div style={{ height: "100vh", position: "relative" }}>
+    <div className="max-w-[88rem] mx-auto px-6">
       <ScrollStack
-        itemDistance={120}
+        useWindowScroll={true}
+        itemDistance={100}
         itemScale={0.04}
         itemStackDistance={24}
         stackPosition="15%"

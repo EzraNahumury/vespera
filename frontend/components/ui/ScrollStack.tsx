@@ -177,8 +177,12 @@ export default function ScrollStack({
     };
   }, [itemDistance, itemScale, itemStackDistance, stackPosition, scaleEndPosition, baseScale, rotationAmount, blurAmount, useWindowScroll, updateCardTransforms]);
 
+  const modeClass = useWindowScroll
+    ? "scroll-stack-scroller--window"
+    : "scroll-stack-scroller--internal";
+
   return (
-    <div className={`scroll-stack-scroller ${className}`.trim()} ref={scrollerRef}>
+    <div className={`scroll-stack-scroller ${modeClass} ${className}`.trim()} ref={scrollerRef}>
       <div className="scroll-stack-inner">
         {children}
         <div className="scroll-stack-end" />
