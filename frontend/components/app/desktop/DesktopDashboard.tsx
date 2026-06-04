@@ -13,14 +13,18 @@ export function DesktopDashboard() {
   const { data: groups, isLoading } = useAllGroups();
   const { data: repData } = useReputation(address);
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<"default" | "az" | "za">("default");
 
   const score = repData?.[0]?.result ? Number(repData[0].result) : 0;
   const tier = repData?.[1]?.result !== undefined ? Number(repData[1].result) : 0;
 
   const allGroups = (groups as `0x${string}`[] | undefined) ?? [];
-  const filtered = query
+  const searched = query
     ? allGroups.filter(a => a.toLowerCase().includes(query.toLowerCase()))
     : allGroups;
+  const filtered = sort === "default"
+    ? searched
+    : [...searched].sort((a, b) => (sort === "az" ? a.localeCompare(b) : b.localeCompare(a)));
 
   return (
     <div className="min-h-screen bg-[#F5F5F5] px-6 py-10">
@@ -50,6 +54,15 @@ export function DesktopDashboard() {
               className="w-full rounded-full border border-black/10 bg-white pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-[#86EFAC]"
             />
           </div>
+          <select
+            value={sort}
+            onChange={e => setSort(e.target.value as "default" | "az" | "za")}
+            className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm focus:outline-none focus:border-[#86EFAC] shrink-0"
+          >
+            <option value="default">Default</option>
+            <option value="az">Address A–Z</option>
+            <option value="za">Address Z–A</option>
+          </select>
           <Link href="/app/create" className="inline-flex items-center gap-2 bg-[#86EFAC] text-black text-sm font-medium px-5 py-2 rounded-full hover:bg-[#4ADE80] transition-colors shrink-0">
             + New Group
           </Link>
