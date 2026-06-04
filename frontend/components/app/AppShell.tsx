@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
 import { LogoIcon } from "@/components/ui/LogoIcon";
 import { WalletButton } from "@/components/ui/WalletButton";
+import { WalletGuard } from "@/components/app/WalletGuard";
 import { Home, Users, Plus, Star, Settings } from "lucide-react";
 
 const navItems = [
@@ -60,7 +61,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
       {/* Page content */}
-      <main className="flex-1 pb-24 md:pb-0">{children}</main>
+      <main className="flex-1 pb-24 md:pb-0">
+        <WalletGuard>{children}</WalletGuard>
+      </main>
 
       {/* ── Mobile iOS-style bottom tab bar ── */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-black/[0.08]"
