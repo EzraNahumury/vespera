@@ -3,7 +3,7 @@
 import { ReactNode } from "react";
 import { useAccount, useSwitchChain } from "wagmi";
 import { celo } from "@/lib/chain";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 
 /**
  * Prompts the user to switch to Celo when their wallet is on the wrong network.
@@ -11,7 +11,7 @@ import { AlertTriangle } from "lucide-react";
  */
 export function NetworkGuard({ children }: { children: ReactNode }) {
   const { isConnected, chainId } = useAccount();
-  const { switchChain } = useSwitchChain();
+  const { switchChain, isPending } = useSwitchChain();
 
   if (isConnected && chainId !== celo.id) {
     return (
@@ -28,9 +28,11 @@ export function NetworkGuard({ children }: { children: ReactNode }) {
           </p>
           <button
             onClick={() => switchChain({ chainId: celo.id })}
-            className="bg-[#86EFAC] text-black font-medium px-7 py-3 rounded-full hover:bg-[#4ADE80] transition-colors"
+            disabled={isPending}
+            className="inline-flex items-center gap-2 bg-[#86EFAC] text-black font-medium px-7 py-3 rounded-full hover:bg-[#4ADE80] transition-colors disabled:opacity-50"
           >
-            Switch to Celo
+            {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+            {isPending ? "Switching…" : "Switch to Celo"}
           </button>
         </div>
       </div>
