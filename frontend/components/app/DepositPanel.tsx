@@ -65,12 +65,19 @@ export function DepositPanel({
       : "w-full flex items-center justify-center gap-2 font-semibold py-3 rounded-xl text-sm disabled:opacity-50 active:scale-[0.98] transition-transform";
   const spin = size === "lg" ? "w-5 h-5" : "w-4 h-4";
 
+  function txError(e: unknown) {
+    const msg = (e as { shortMessage?: string })?.shortMessage ?? "Transaction failed.";
+    toast("error", msg);
+  }
   function handleApprove() {
     if (!token || depositAmount === undefined) return;
-    approve({ address: token, abi: ERC20ABI, functionName: "approve", args: [group, depositAmount] });
+    approve(
+      { address: token, abi: ERC20ABI, functionName: "approve", args: [group, depositAmount] },
+      { onError: txError },
+    );
   }
   function handleDeposit() {
-    deposit({ address: group, abi: ArisanGroupABI, functionName: "deposit" });
+    deposit({ address: group, abi: ArisanGroupABI, functionName: "deposit" }, { onError: txError });
   }
 
   return (
