@@ -128,6 +128,13 @@ export function DepositPanel({
           {dPending ? "Confirm in wallet…" : dConfirming ? "Depositing…" : dDone ? "Deposited ✓" : "Deposit Now"}
         </button>
       )}
+
+      {(dHash || aHash) && (
+        <a href={`https://celoscan.io/tx/${dHash ?? aHash}`} target="_blank" rel="noopener noreferrer"
+          className="block text-center text-xs text-black/40 hover:text-[#16A34A] transition-colors">
+          View transaction on Celoscan ↗
+        </a>
+      )}
     </div>
   );
 }
