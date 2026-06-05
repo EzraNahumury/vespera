@@ -6,6 +6,7 @@ import { ArisanGroupABI } from "@/abis/ArisanGroup";
 import { VotingEngineABI } from "@/abis/VotingEngine";
 import { TOKEN_LABELS, CONTRACTS } from "@/lib/chain";
 import { VoteStatus } from "@/components/app/VoteStatus";
+import { DepositPanel } from "@/components/app/DepositPanel";
 import { Loader2, CheckCircle2, XCircle, ChevronLeft, Clock3, UserPlus } from "lucide-react";
 import Link from "next/link";
 
@@ -55,8 +56,6 @@ export function MobileGroupDetail({ address }: { address: `0x${string}` }) {
   const depositFmt  = depositAmt ? formatUnits(depositAmt, 18) : "—";
   const fillPct     = memberCount && maxMembers ? (memberCount / maxMembers) * 100 : 0;
 
-  const { writeContract: deposit, data: dHash, isPending: dPending } = useWriteContract();
-  const { isLoading: dConfirm, isSuccess: dDone } = useWaitForTransactionReceipt({ hash: dHash });
   const { writeContract: reqW, data: wHash, isPending: wPending } = useWriteContract();
   const { isLoading: wConfirm, isSuccess: wDone } = useWaitForTransactionReceipt({ hash: wHash });
   const { writeContract: castVote, isPending: voting } = useWriteContract();
@@ -210,15 +209,9 @@ export function MobileGroupDetail({ address }: { address: `0x${string}` }) {
               <>
                 <div className="bg-white rounded-2xl card-shadow px-5 py-5">
                   <p className="text-xs text-black/40 mb-1">Fixed deposit this round</p>
-                  <p className="text-3xl font-bold text-black">{depositFmt} <span className="text-lg font-medium text-black/50">{tokenLabel}</span></p>
+                  <p className="text-3xl font-bold text-black mb-4">{depositFmt} <span className="text-lg font-medium text-black/50">{tokenLabel}</span></p>
+                  <DepositPanel group={address} token={token} owner={wallet} depositAmount={depositAmt} depositFmt={depositFmt} tokenLabel={tokenLabel} size="lg" />
                 </div>
-
-                <button onClick={() => deposit({ address, abi: ArisanGroupABI, functionName: "deposit" })}
-                  disabled={dPending || dConfirm}
-                  className="w-full flex items-center justify-center gap-2 bg-[#86EFAC] text-black font-bold py-4 rounded-2xl text-base disabled:opacity-50 active:scale-[0.98] transition-transform">
-                  {(dPending || dConfirm) && <Loader2 className="w-5 h-5 animate-spin" />}
-                  {dPending ? "Confirm…" : dConfirm ? "Depositing…" : dDone ? "Deposited ✓" : "Deposit Now"}
-                </button>
 
                 {!requestId && (
                   <div className="bg-white rounded-2xl card-shadow overflow-hidden">
