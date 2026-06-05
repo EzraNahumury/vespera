@@ -1,121 +1,110 @@
 "use client";
 
-import LogoLoop from "@/components/ui/LogoLoop";
-import {
-  SiSolidity, SiNextdotjs, SiTypescript, SiTailwindcss,
-  SiReact, SiWagmi, SiOpenzeppelin, SiIpfs,
-} from "react-icons/si";
-import { Brain, Hammer, Shield, Coins } from "lucide-react";
+import { Shield, Zap, Brain, Award, Users, Coins } from "lucide-react";
 
-const techLogos = [
-  { node: <Coins size={28} />,  title: "Celo",          href: "https://celo.org" },
-  { node: <SiSolidity />,       title: "Solidity",      href: "https://soliditylang.org" },
-  { node: <SiNextdotjs />,      title: "Next.js",       href: "https://nextjs.org" },
-  { node: <SiTypescript />,     title: "TypeScript",    href: "https://typescriptlang.org" },
-  { node: <SiTailwindcss />,    title: "Tailwind CSS",  href: "https://tailwindcss.com" },
-  { node: <SiReact />,          title: "React",         href: "https://react.dev" },
-  { node: <SiWagmi />,          title: "Wagmi",         href: "https://wagmi.sh" },
-  { node: <SiOpenzeppelin />,   title: "OpenZeppelin",  href: "https://openzeppelin.com" },
-  { node: <SiIpfs />,           title: "IPFS",          href: "https://ipfs.tech" },
-  { node: <Brain size={28} />,  title: "Claude AI",     href: "https://anthropic.com" },
-  { node: <Hammer size={28} />, title: "Foundry",       href: "https://getfoundry.sh" },
-  { node: <Shield size={28} />, title: "Viem",          href: "https://viem.sh" },
-];
-
-const layers = [
+const features = [
   {
-    label: "Blockchain",
-    color: "#86EFAC",
-    items: [
-      { name: "Celo", desc: "EVM-compatible L1, mobile-first, sub-$0.01 gas" },
-      { name: "Solidity 0.8.28", desc: "Smart contract language" },
-      { name: "Foundry", desc: "Build, test, and deploy framework" },
-      { name: "OpenZeppelin", desc: "ERC-721, AccessControl, ReentrancyGuard" },
-    ],
+    icon: Shield,
+    title: "Fully On-Chain & Transparent",
+    description:
+      "Every deposit, rotation, and payout is recorded on Celo. No middlemen, no hidden fees — just trustless smart contracts anyone can verify.",
+    accent: "#86EFAC",
+    accentText: "#14532D",
+    tag: "Trustless",
   },
   {
-    label: "Smart Contracts",
-    color: "#4ADE80",
-    items: [
-      { name: "ArisanGroup", desc: "Core group logic: deposits, rotation, requests" },
-      { name: "VotingEngine", desc: "Reputation-weighted voting + confidence routing" },
-      { name: "Treasury", desc: "Multi-token escrow (USDC / USDT / CELO)" },
-      { name: "ReputationRegistry", desc: "On-chain score 0–1000 across all groups" },
-      { name: "BadgeNFT", desc: "Soulbound ERC-721 attestations" },
-      { name: "GroupRegistry", desc: "Factory + directory of all groups" },
-    ],
+    icon: Brain,
+    title: "AI-Powered Fair Voting",
+    description:
+      "Claude AI agents evaluate each withdrawal request objectively. One Requester Agent drafts the case; one Reviewer Agent audits it — bias removed.",
+    accent: "#C4B5FD",
+    accentText: "#4C1D95",
+    tag: "Claude AI",
   },
   {
-    label: "Frontend",
-    color: "#FDE68A",
-    items: [
-      { name: "Next.js 15", desc: "App Router, server + client components" },
-      { name: "TypeScript 5", desc: "Type-safe codebase" },
-      { name: "Tailwind CSS 4", desc: "Utility-first styling" },
-      { name: "Wagmi v2 + Viem", desc: "Wallet connection and contract reads/writes" },
-      { name: "Lucide React", desc: "Icon library" },
-    ],
+    icon: Award,
+    title: "Soulbound Reputation Score",
+    description:
+      "Your on-chain reputation (0–1000) travels with your wallet across every group. Good behavior earns badges; bad actors lose voting weight automatically.",
+    accent: "#FDE68A",
+    accentText: "#78350F",
+    tag: "Reputation",
   },
   {
-    label: "AI Layer",
-    color: "#C4B5FD",
-    items: [
-      { name: "Claude Sonnet", desc: "LLM powering Requester & Reviewer Agents" },
-      { name: "Anthropic SDK", desc: "Server-side AI calls via Next.js API routes" },
-      { name: "Multi-Agent", desc: "One Requester Agent + one Reviewer per member" },
-      { name: "IPFS", desc: "Reasoning logs stored as CIDs via web3.storage" },
-    ],
+    icon: Zap,
+    title: "Sub-$0.01 Gas Fees",
+    description:
+      "Built on Celo — a mobile-first L1 designed for real-world payments. Every transaction costs less than a cent, making micro-savings practical for everyone.",
+    accent: "#86EFAC",
+    accentText: "#14532D",
+    tag: "Celo L1",
+  },
+  {
+    icon: Coins,
+    title: "Multi-Token Escrow",
+    description:
+      "Groups can save in CELO, USDC, or USDT. Funds are locked in a non-custodial Treasury contract — only released when the group reaches consensus.",
+    accent: "#FDE68A",
+    accentText: "#78350F",
+    tag: "DeFi",
+  },
+  {
+    icon: Users,
+    title: "Built for Communities",
+    description:
+      "From family groups to professional guilds — Vespera fits any arisan format. Customizable cycles, member caps, and invite-only access keep your circle tight.",
+    accent: "#C4B5FD",
+    accentText: "#4C1D95",
+    tag: "Social",
   },
 ];
 
 export function TechStack() {
   return (
-    <section id="stack" className="bg-[#F5F5F5] px-4 md:px-6 py-24 scroll-mt-20">
+    <section id="features" className="bg-[#F5F5F5] px-4 md:px-6 py-24 scroll-mt-20">
       <div className="max-w-[88rem] mx-auto">
-        <div className="mb-12">
-          <p className="text-black/50 text-sm mb-2">Architecture</p>
+
+        {/* Header */}
+        <div className="mb-14 max-w-2xl">
+          <p className="text-black/45 text-sm font-medium mb-3 uppercase tracking-widest">Why Vespera</p>
           <h2 className="text-4xl md:text-5xl font-medium text-black leading-tight" style={{ letterSpacing: "-0.03em" }}>
-            Built With
+            Everything your arisan<br className="hidden sm:block" /> needs, on-chain.
           </h2>
+          <p className="text-black/50 text-lg mt-4 leading-relaxed">
+            We combined DeFi infrastructure, AI fairness, and community-first design so you can run a rotating savings group with total confidence.
+          </p>
         </div>
 
-        {/* LogoLoop */}
-        <div className="mb-14 py-4" style={{ height: "80px", position: "relative", overflow: "hidden" }}>
-          <LogoLoop
-            logos={techLogos}
-            speed={80}
-            direction="left"
-            logoHeight={32}
-            gap={48}
-            hoverSpeed={0}
-            scaleOnHover
-            fadeOut
-            fadeOutColor="#F5F5F5"
-            ariaLabel="Technology stack"
-          />
-        </div>
-
-        {/* Detail cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {layers.map(({ label, color, items }) => (
-            <div key={label} className="rounded-2xl bg-white p-7 border border-black/5">
-              <div className="flex items-center gap-2 mb-5">
-                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
-                <span className="text-black/50 text-sm font-medium uppercase tracking-wider">{label}</span>
+        {/* Feature grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {features.map(({ icon: Icon, title, description, accent, accentText, tag }) => (
+            <div
+              key={title}
+              className="group bg-white rounded-2xl border border-black/[0.06] p-7 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+            >
+              {/* Icon + Tag row */}
+              <div className="flex items-start justify-between mb-5">
+                <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: accent + "33" }}
+                >
+                  <Icon className="w-6 h-6" style={{ color: accentText }} />
+                </div>
+                <span
+                  className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                  style={{ backgroundColor: accent + "40", color: accentText }}
+                >
+                  {tag}
+                </span>
               </div>
-              <ul className="space-y-4">
-                {items.map(({ name, desc }) => (
-                  <li key={name} className="flex items-start gap-3">
-                    <span className="text-xs font-mono px-2 py-1 rounded-md shrink-0 mt-0.5" style={{ backgroundColor: color, color: "#000" }}>
-                      {name}
-                    </span>
-                    <span className="text-black/55 text-sm leading-relaxed">{desc}</span>
-                  </li>
-                ))}
-              </ul>
+
+              {/* Text */}
+              <h3 className="text-base font-semibold text-black mb-2 leading-snug">{title}</h3>
+              <p className="text-sm text-black/50 leading-relaxed">{description}</p>
             </div>
           ))}
         </div>
+
       </div>
     </section>
   );
