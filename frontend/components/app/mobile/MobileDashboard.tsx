@@ -4,7 +4,7 @@ import { useAccount } from "wagmi";
 import { useAllGroups } from "@/hooks/useGroups";
 import { useMyGroups } from "@/hooks/useMyGroups";
 import { useReputation } from "@/hooks/useReputation";
-import { filterGroups, GROUP_FILTERS, type GroupFilterMode } from "@/lib/groupFilter";
+import { filterGroups, groupCounts, GROUP_FILTERS, type GroupFilterMode } from "@/lib/groupFilter";
 import { GroupCard } from "@/components/app/GroupCard";
 import { ReputationGauge } from "@/components/ui/ReputationGauge";
 import { SectionLabel, ListCard, ButtonLink } from "@/components/ui/primitives";
@@ -27,6 +27,7 @@ export function MobileDashboard() {
   const score = repData?.[0]?.result ? Number(repData[0].result) : 0;
   const allGroups = (groups as `0x${string}`[] | undefined) ?? [];
   const { rel } = useMyGroups(allGroups);
+  const counts = groupCounts(allGroups, rel);
   const scoped = filterGroups(allGroups, rel, filterMode);
   const groupList = query ? scoped.filter(a => a.toLowerCase().includes(query.toLowerCase())) : scoped;
 
@@ -86,7 +87,7 @@ export function MobileDashboard() {
                 className={`flex-1 py-1.5 rounded-lg text-sm font-semibold transition-all ${
                   filterMode === mode ? "bg-white text-black shadow-sm" : "text-black/50"
                 }`}>
-                {label}
+                {label} <span className="text-black/30 font-medium">{counts[mode]}</span>
               </button>
             ))}
           </div>
