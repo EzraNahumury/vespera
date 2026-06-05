@@ -1,8 +1,9 @@
 "use client";
-import { useReadContracts, useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
+import { useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
 import { parseUnits, formatUnits, isAddress } from "viem";
 import { useState } from "react";
 import { ArisanGroupABI } from "@/abis/ArisanGroup";
+import { ERC20ABI } from "@/abis/ERC20";
 import { VotingEngineABI } from "@/abis/VotingEngine";
 import { TOKEN_LABELS, CONTRACTS } from "@/lib/chain";
 import { VoteStatus } from "@/components/app/VoteStatus";
@@ -50,8 +51,12 @@ export function DesktopGroupDetail({ address }: { address: `0x${string}` }) {
   const isCreator = !!creator && !!wallet && creator.toLowerCase() === wallet.toLowerCase();
   const canJoin = !!isInvited && !isMember;
 
+  const { data: tokenDecimals } = useReadContract({
+    address: token, abi: ERC20ABI, functionName: "decimals", query: { enabled: !!token },
+  });
+  const decimals = tokenDecimals !== undefined ? Number(tokenDecimals) : 18;
   const tokenLabel = token ? (TOKEN_LABELS[token] ?? "token") : "—";
-  const depositFmt = depositAmount ? formatUnits(depositAmount, 18) : "—";
+  const depositFmt = depositAmount ? formatUnits(depositAmount, decimals) : "—";
 
   const { writeContract: requestW, data: wHash, isPending: wPending } = useWriteContract();
   const { isLoading: wConfirming, isSuccess: wDone } = useWaitForTransactionReceipt({ hash: wHash });

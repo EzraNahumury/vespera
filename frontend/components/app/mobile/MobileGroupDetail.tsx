@@ -1,8 +1,9 @@
 "use client";
-import { useReadContracts, useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
+import { useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
 import { parseUnits, formatUnits, isAddress } from "viem";
 import { useState } from "react";
 import { ArisanGroupABI } from "@/abis/ArisanGroup";
+import { ERC20ABI } from "@/abis/ERC20";
 import { VotingEngineABI } from "@/abis/VotingEngine";
 import { TOKEN_LABELS, CONTRACTS } from "@/lib/chain";
 import { VoteStatus } from "@/components/app/VoteStatus";
@@ -52,8 +53,12 @@ export function MobileGroupDetail({ address }: { address: `0x${string}` }) {
   const isCreator   = !!creator && !!wallet && creator.toLowerCase() === wallet.toLowerCase();
   const canJoin     = !!isInvited && !isMember;
 
+  const { data: tokenDecimals } = useReadContract({
+    address: token, abi: ERC20ABI, functionName: "decimals", query: { enabled: !!token },
+  });
+  const decimals    = tokenDecimals !== undefined ? Number(tokenDecimals) : 18;
   const tokenLabel  = token ? (TOKEN_LABELS[token] ?? "token") : "—";
-  const depositFmt  = depositAmt ? formatUnits(depositAmt, 18) : "—";
+  const depositFmt  = depositAmt ? formatUnits(depositAmt, decimals) : "—";
   const fillPct     = memberCount && maxMembers ? (memberCount / maxMembers) * 100 : 0;
 
   const { writeContract: reqW, data: wHash, isPending: wPending } = useWriteContract();
