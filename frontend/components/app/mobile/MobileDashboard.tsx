@@ -2,7 +2,9 @@
 import { useState } from "react";
 import { useAccount } from "wagmi";
 import { useAllGroups } from "@/hooks/useGroups";
+import { useMyGroups } from "@/hooks/useMyGroups";
 import { useReputation } from "@/hooks/useReputation";
+import { filterGroups, groupCounts, GROUP_FILTERS, type GroupFilterMode } from "@/lib/groupFilter";
 import { GroupCard } from "@/components/app/GroupCard";
 import { ReputationGauge } from "@/components/ui/ReputationGauge";
 import { SectionLabel, ListCard, ButtonLink } from "@/components/ui/primitives";
@@ -20,10 +22,14 @@ export function MobileDashboard() {
   const { data: groups, isLoading } = useAllGroups();
   const { data: repData } = useReputation(address);
   const [query, setQuery] = useState("");
+  const [filterMode, setFilterMode] = useState<GroupFilterMode>("all");
 
   const score = repData?.[0]?.result ? Number(repData[0].result) : 0;
   const allGroups = (groups as `0x${string}`[] | undefined) ?? [];
-  const groupList = query ? allGroups.filter(a => a.toLowerCase().includes(query.toLowerCase())) : allGroups;
+  const { rel } = useMyGroups(allGroups);
+  const counts = groupCounts(allGroups, rel);
+  const scoped = filterGroups(allGroups, rel, filterMode);
+  const groupList = query ? scoped.filter(a => a.toLowerCase().includes(query.toLowerCase())) : scoped;
 
   return (
     <div className="min-h-screen animate-fade-up" style={{ backgroundColor: "var(--bg)" }}>
@@ -74,6 +80,19 @@ export function MobileDashboard() {
           </Link>
         </div>
 
+        {isConnected && allGroups.length > 0 && (
+          <div className="flex bg-black/[0.05] rounded-xl p-1 gap-1 mb-3">
+            {GROUP_FILTERS.map(({ mode, label }) => (
+              <button key={mode} onClick={() => setFilterMode(mode)}
+                className={`flex-1 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+                  filterMode === mode ? "bg-white text-black shadow-sm" : "text-black/50"
+                }`}>
+                {label} <span className="text-black/30 font-medium">{counts[mode]}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
         {allGroups.length > 0 && (
           <div className="relative mb-3">
             <Search className="w-4 h-4 text-black/30 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -102,6 +121,19 @@ export function MobileDashboard() {
         ) : groupList.length > 0 ? (
           <div className="space-y-3">
             {groupList.map(addr => <GroupCard key={addr} address={addr} />)}
+          </div>
+        ) : filterMode !== "all" && counts[filterMode] === 0 ? (
+          <div className="bg-white rounded-2xl card-shadow px-4 py-10 text-center">
+            <div className="text-4xl mb-3">{filterMode === "created" ? "🏗️" : "🤝"}</div>
+            <p className="font-semibold text-black/60 text-sm">
+              {filterMode === "created" ? "No groups created yet" : "No groups joined yet"}
+            </p>
+            <p className="text-xs text-black/35 mt-1 mb-4">
+              {filterMode === "created" ? "Start your own arisan" : "Join one you're invited to"}
+            </p>
+            <ButtonLink href={filterMode === "created" ? "/app/create" : "/app/groups"} className="!rounded-full">
+              {filterMode === "created" ? <><Plus className="w-4 h-4" /> Create Group</> : "Browse Groups"}
+            </ButtonLink>
           </div>
         ) : allGroups.length > 0 ? (
           <div className="bg-white rounded-2xl card-shadow px-4 py-8 text-center">
