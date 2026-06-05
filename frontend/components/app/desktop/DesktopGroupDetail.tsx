@@ -6,6 +6,7 @@ import { ArisanGroupABI } from "@/abis/ArisanGroup";
 import { VotingEngineABI } from "@/abis/VotingEngine";
 import { TOKEN_LABELS, CONTRACTS } from "@/lib/chain";
 import { VoteStatus } from "@/components/app/VoteStatus";
+import { DepositPanel } from "@/components/app/DepositPanel";
 import { PageContainer, Card, Button, Stat } from "@/components/ui/primitives";
 import { Loader, CheckCircle, XCircle, Users, Clock, ArrowLeft, UserPlus } from "lucide-react";
 import Link from "next/link";
@@ -52,8 +53,6 @@ export function DesktopGroupDetail({ address }: { address: `0x${string}` }) {
   const tokenLabel = token ? (TOKEN_LABELS[token] ?? "token") : "—";
   const depositFmt = depositAmount ? formatUnits(depositAmount, 18) : "—";
 
-  const { writeContract: deposit, data: dHash, isPending: dPending } = useWriteContract();
-  const { isLoading: dConfirming, isSuccess: dDone } = useWaitForTransactionReceipt({ hash: dHash });
   const { writeContract: requestW, data: wHash, isPending: wPending } = useWriteContract();
   const { isLoading: wConfirming, isSuccess: wDone } = useWaitForTransactionReceipt({ hash: wHash });
   const { writeContract: castVote, isPending: voting } = useWriteContract();
@@ -130,10 +129,7 @@ export function DesktopGroupDetail({ address }: { address: `0x${string}` }) {
             <Card>
               <h2 className="text-black text-lg font-semibold mb-2">Deposit This Round</h2>
               <p className="text-black/50 text-sm mb-4">Fixed deposit: <strong className="text-black">{depositFmt} {tokenLabel}</strong></p>
-              <Button fullWidth onClick={() => deposit({ address, abi: ArisanGroupABI, functionName: "deposit" })} disabled={dPending || dConfirming}>
-                {(dPending || dConfirming) && <Loader className="w-4 h-4 animate-spin" />}
-                {dPending ? "Confirm…" : dConfirming ? "Depositing…" : dDone ? "Deposited ✓" : "Deposit"}
-              </Button>
+              <DepositPanel group={address} token={token} owner={wallet} depositAmount={depositAmount} depositFmt={depositFmt} tokenLabel={tokenLabel} />
             </Card>
           )}
 
