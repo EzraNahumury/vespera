@@ -80,17 +80,27 @@ export function DepositPanel({
     deposit({ address: group, abi: ArisanGroupABI, functionName: "deposit" }, { onError: txError });
   }
 
+  const loading = gate.isLoading && gate.balance === undefined;
+
   return (
     <div className="space-y-3">
       {/* Balance row */}
       <div className="flex items-center justify-between text-sm">
         <span className="text-black/50">Your balance</span>
-        <span className="font-medium text-black">
-          {gate.balanceFmt !== undefined ? `${gate.balanceFmt} ${gate.symbol ?? tokenLabel}` : "—"}
-        </span>
+        {loading ? (
+          <span className="h-4 w-24 rounded bg-black/5 animate-pulse" />
+        ) : (
+          <span className="font-medium text-black">
+            {gate.balanceFmt !== undefined ? `${gate.balanceFmt} ${gate.symbol ?? tokenLabel}` : "—"}
+          </span>
+        )}
       </div>
 
-      {gate.insufficientBalance ? (
+      {loading ? (
+        <button disabled className={`${btn} bg-black/5 text-black/30`}>
+          <Loader className={`${spin} animate-spin`} /> Checking balance…
+        </button>
+      ) : gate.insufficientBalance ? (
         <div className="flex items-start gap-2 rounded-xl bg-red-50 border border-red-100 px-3 py-2.5">
           <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
           <p className="text-red-600 text-xs leading-relaxed">
@@ -117,6 +127,13 @@ export function DepositPanel({
           {(dPending || dConfirming) && <Loader className={`${spin} animate-spin`} />}
           {dPending ? "Confirm in wallet…" : dConfirming ? "Depositing…" : dDone ? "Deposited ✓" : "Deposit Now"}
         </button>
+      )}
+
+      {(dHash || aHash) && (
+        <a href={`https://celoscan.io/tx/${dHash ?? aHash}`} target="_blank" rel="noopener noreferrer"
+          className="block text-center text-xs text-black/40 hover:text-[#16A34A] transition-colors">
+          View transaction on Celoscan ↗
+        </a>
       )}
     </div>
   );
