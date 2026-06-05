@@ -1,6 +1,6 @@
 "use client";
 import { useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
-import { parseUnits, formatUnits, isAddress } from "viem";
+import { formatUnits, isAddress } from "viem";
 import { useState } from "react";
 import { ArisanGroupABI } from "@/abis/ArisanGroup";
 import { ERC20ABI } from "@/abis/ERC20";
@@ -8,6 +8,7 @@ import { VotingEngineABI } from "@/abis/VotingEngine";
 import { TOKEN_LABELS, CONTRACTS } from "@/lib/chain";
 import { VoteStatus } from "@/components/app/VoteStatus";
 import { DepositPanel } from "@/components/app/DepositPanel";
+import { WithdrawalPanel } from "@/components/app/WithdrawalPanel";
 import { Loader2, CheckCircle2, XCircle, ChevronLeft, Clock3, UserPlus } from "lucide-react";
 import Link from "next/link";
 
@@ -16,8 +17,6 @@ type Tab = "overview" | "deposit" | "vote";
 export function MobileGroupDetail({ address }: { address: `0x${string}` }) {
   const { address: wallet } = useAccount();
   const [tab, setTab] = useState<Tab>("overview");
-  const [withdrawAmount, setWithdrawAmount] = useState("");
-  const [withdrawReason, setWithdrawReason] = useState("");
   const [inviteAddr, setInviteAddr] = useState("");
 
   const { data } = useReadContracts({
@@ -61,8 +60,6 @@ export function MobileGroupDetail({ address }: { address: `0x${string}` }) {
   const depositFmt  = depositAmt ? formatUnits(depositAmt, decimals) : "—";
   const fillPct     = memberCount && maxMembers ? (memberCount / maxMembers) * 100 : 0;
 
-  const { writeContract: reqW, data: wHash, isPending: wPending } = useWriteContract();
-  const { isLoading: wConfirm, isSuccess: wDone } = useWaitForTransactionReceipt({ hash: wHash });
   const { writeContract: castVote, isPending: voting } = useWriteContract();
   const { writeContract: finalizeVote, data: fHash, isPending: fPending } = useWriteContract();
   const { isLoading: fConfirm, isSuccess: fDone } = useWaitForTransactionReceipt({ hash: fHash });
@@ -219,30 +216,10 @@ export function MobileGroupDetail({ address }: { address: `0x${string}` }) {
                 </div>
 
                 {!requestId && (
-                  <div className="bg-white rounded-2xl card-shadow overflow-hidden">
-                    <div className="px-4 pt-5 pb-3 border-b border-black/[0.06]">
-                      <p className="font-semibold text-black text-sm">Request Withdrawal</p>
-                      <p className="text-xs text-black/40 mt-0.5">Submit a request for this round</p>
-                    </div>
-                    <div className="px-4 py-3 space-y-2">
-                      <div className="flex items-center bg-[#F2F2F7] rounded-xl overflow-hidden">
-                        <span className="text-black/30 text-sm pl-3 shrink-0">{tokenLabel}</span>
-                        <input type="number" inputMode="decimal" placeholder="0.00" value={withdrawAmount}
-                          onChange={e => setWithdrawAmount(e.target.value)}
-                          className="flex-1 px-3 py-3.5 text-sm text-black bg-transparent outline-none placeholder:text-black/25" />
-                      </div>
-                      <input type="text" placeholder="Reason for withdrawal"
-                        value={withdrawReason} onChange={e => setWithdrawReason(e.target.value)}
-                        className="w-full bg-[#F2F2F7] rounded-xl px-3 py-3.5 text-sm text-black outline-none placeholder:text-black/25" />
-                    </div>
-                    <div className="px-4 pb-4">
-                      <button onClick={() => reqW({ address, abi: ArisanGroupABI, functionName: "requestWithdrawal", args: [parseUnits(withdrawAmount||"0",18), withdrawReason] })}
-                        disabled={wPending || wConfirm || !withdrawAmount || !withdrawReason}
-                        className="w-full flex items-center justify-center gap-2 bg-[#14532D] text-white font-semibold py-3.5 rounded-xl text-sm disabled:opacity-50 active:scale-[0.98] transition-transform">
-                        {(wPending || wConfirm) && <Loader2 className="w-4 h-4 animate-spin" />}
-                        {wPending ? "Confirm…" : wConfirm ? "Submitting…" : wDone ? "Submitted ✓" : "Submit Request"}
-                      </button>
-                    </div>
+                  <div className="bg-white rounded-2xl card-shadow px-4 py-4">
+                    <p className="font-semibold text-black text-sm mb-0.5">Request Withdrawal</p>
+                    <p className="text-xs text-black/40 mb-3">Submit a request for this round</p>
+                    <WithdrawalPanel group={address} token={token} decimals={decimals} tokenLabel={tokenLabel} size="lg" />
                   </div>
                 )}
               </>
