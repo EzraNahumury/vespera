@@ -114,6 +114,19 @@ export function DesktopDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {filtered.map(addr => <GroupCard key={addr} address={addr} />)}
         </div>
+      ) : filterMode !== "all" && counts[filterMode] === 0 ? (
+        <div className="bg-white rounded-2xl card-shadow p-12 text-center">
+          <div className="text-4xl mb-3">{filterMode === "created" ? "🏗️" : "🤝"}</div>
+          <p className="font-semibold text-black/70">
+            {filterMode === "created" ? "You haven't created any groups yet." : "You haven't joined any groups yet."}
+          </p>
+          <p className="text-black/40 text-sm mt-1 mb-5">
+            {filterMode === "created" ? "Start your own arisan." : "Browse groups and join one you're invited to."}
+          </p>
+          <ButtonLink href={filterMode === "created" ? "/app/create" : "/app/groups"}>
+            {filterMode === "created" ? <><Plus className="w-4 h-4" /> Create Group</> : "Browse Groups"}
+          </ButtonLink>
+        </div>
       ) : allGroups.length > 0 ? (
         <div className="bg-white rounded-2xl card-shadow p-12 text-center">
           <p className="text-black/40">No groups match &ldquo;{query}&rdquo;.</p>
