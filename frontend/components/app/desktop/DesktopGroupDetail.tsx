@@ -71,6 +71,11 @@ export function DesktopGroupDetail({ address }: { address: `0x${string}` }) {
     if (jDone) { refetchGroup(); refetchMember(); }
   }, [jDone]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Invite confirm -> member-status; finalize confirm -> activeRequestId clears.
+  useEffect(() => {
+    if (iDone || fDone) { refetchGroup(); refetchMember(); }
+  }, [iDone, fDone]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const inviteList = inviteAddr.split(",").map(s => s.trim()).filter(Boolean);
   const validInvites = inviteList.filter(a => isAddress(a)) as `0x${string}`[];
   const canInvite = validInvites.length > 0 && validInvites.length === inviteList.length;
