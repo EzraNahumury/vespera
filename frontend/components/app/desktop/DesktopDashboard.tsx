@@ -2,7 +2,9 @@
 import { useState } from "react";
 import { useAccount } from "wagmi";
 import { useAllGroups } from "@/hooks/useGroups";
+import { useMyGroups } from "@/hooks/useMyGroups";
 import { useReputation } from "@/hooks/useReputation";
+import { filterGroups, GROUP_FILTERS, type GroupFilterMode } from "@/lib/groupFilter";
 import { GroupCard } from "@/components/app/GroupCard";
 import { ReputationGauge } from "@/components/ui/ReputationGauge";
 import { PageContainer, PageHeader, SectionLabel, ButtonLink } from "@/components/ui/primitives";
@@ -21,11 +23,14 @@ export function DesktopDashboard() {
   const { data: repData } = useReputation(address);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<"default" | "az" | "za">("default");
+  const [filterMode, setFilterMode] = useState<GroupFilterMode>("all");
 
   const score = repData?.[0]?.result ? Number(repData[0].result) : 0;
 
   const allGroups = (groups as `0x${string}`[] | undefined) ?? [];
-  const searched = query ? allGroups.filter(a => a.toLowerCase().includes(query.toLowerCase())) : allGroups;
+  const { rel } = useMyGroups(allGroups);
+  const scoped = filterGroups(allGroups, rel, filterMode);
+  const searched = query ? scoped.filter(a => a.toLowerCase().includes(query.toLowerCase())) : scoped;
   const filtered = sort === "default" ? searched
     : [...searched].sort((a, b) => (sort === "az" ? a.localeCompare(b) : b.localeCompare(a)));
 
@@ -86,6 +91,18 @@ export function DesktopDashboard() {
             <Plus className="w-4 h-4" /> New
           </ButtonLink>
         </div>
+      </div>
+
+      {/* Created / Joined / All filter */}
+      <div className="inline-flex bg-black/[0.05] rounded-xl p-1 gap-1 mb-4">
+        {GROUP_FILTERS.map(({ mode, label }) => (
+          <button key={mode} onClick={() => setFilterMode(mode)}
+            className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+              filterMode === mode ? "bg-white text-black shadow-sm" : "text-black/50 hover:text-black"
+            }`}>
+            {label}
+          </button>
+        ))}
       </div>
 
       {isLoading ? (
