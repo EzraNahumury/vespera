@@ -94,17 +94,19 @@ export function DesktopDashboard() {
         </div>
       </div>
 
-      {/* Created / Joined / All filter */}
-      <div className="inline-flex bg-black/[0.05] rounded-xl p-1 gap-1 mb-4">
-        {GROUP_FILTERS.map(({ mode, label }) => (
-          <button key={mode} onClick={() => setFilterMode(mode)}
-            className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${
-              filterMode === mode ? "bg-white text-black shadow-sm" : "text-black/50 hover:text-black"
-            }`}>
-            {label} <span className="text-black/30 font-medium">{counts[mode]}</span>
-          </button>
-        ))}
-      </div>
+      {/* Created / Joined / All filter — needs a wallet to classify */}
+      {isConnected && (
+        <div className="inline-flex bg-black/[0.05] rounded-xl p-1 gap-1 mb-4">
+          {GROUP_FILTERS.map(({ mode, label }) => (
+            <button key={mode} onClick={() => setFilterMode(mode)}
+              className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+                filterMode === mode ? "bg-white text-black shadow-sm" : "text-black/50 hover:text-black"
+              }`}>
+              {label} <span className="text-black/30 font-medium">{counts[mode]}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
