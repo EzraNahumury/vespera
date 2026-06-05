@@ -1,7 +1,7 @@
 "use client";
 import { useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
 import { formatUnits, isAddress } from "viem";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArisanGroupABI } from "@/abis/ArisanGroup";
 import { ERC20ABI } from "@/abis/ERC20";
 import { VotingEngineABI } from "@/abis/VotingEngine";
@@ -17,7 +17,7 @@ export function DesktopGroupDetail({ address }: { address: `0x${string}` }) {
   const { address: wallet } = useAccount();
   const [inviteAddr, setInviteAddr] = useState("");
 
-  const { data } = useReadContracts({
+  const { data, refetch: refetchGroup } = useReadContracts({
     contracts: [
       { address, abi: ArisanGroupABI, functionName: "memberCount" },
       { address, abi: ArisanGroupABI, functionName: "maxMembers" },
@@ -29,7 +29,7 @@ export function DesktopGroupDetail({ address }: { address: `0x${string}` }) {
       { address, abi: ArisanGroupABI, functionName: "creator" },
     ],
   });
-  const { data: memberCheck } = useReadContracts({
+  const { data: memberCheck, refetch: refetchMember } = useReadContracts({
     contracts: wallet ? [
       { address, abi: ArisanGroupABI, functionName: "isMember" as const, args: [wallet] },
       { address, abi: ArisanGroupABI, functionName: "invited" as const, args: [wallet] },
@@ -64,6 +64,17 @@ export function DesktopGroupDetail({ address }: { address: `0x${string}` }) {
   const { isLoading: iConfirming, isSuccess: iDone } = useWaitForTransactionReceipt({ hash: iHash });
   const { writeContract: join, data: jHash, isPending: jPending } = useWriteContract();
   const { isLoading: jConfirming, isSuccess: jDone } = useWaitForTransactionReceipt({ hash: jHash });
+
+  // After join confirms, refetch so the view flips from invited -> member
+  // without a manual page refresh.
+  useEffect(() => {
+    if (jDone) { refetchGroup(); refetchMember(); }
+  }, [jDone]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Invite confirm -> member-status; finalize confirm -> activeRequestId clears.
+  useEffect(() => {
+    if (iDone || fDone) { refetchGroup(); refetchMember(); }
+  }, [iDone, fDone]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const inviteList = inviteAddr.split(",").map(s => s.trim()).filter(Boolean);
   const validInvites = inviteList.filter(a => isAddress(a)) as `0x${string}`[];
