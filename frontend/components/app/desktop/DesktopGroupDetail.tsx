@@ -1,6 +1,6 @@
 "use client";
 import { useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
-import { parseUnits, formatUnits, isAddress } from "viem";
+import { formatUnits, isAddress } from "viem";
 import { useState } from "react";
 import { ArisanGroupABI } from "@/abis/ArisanGroup";
 import { ERC20ABI } from "@/abis/ERC20";
@@ -8,14 +8,13 @@ import { VotingEngineABI } from "@/abis/VotingEngine";
 import { TOKEN_LABELS, CONTRACTS } from "@/lib/chain";
 import { VoteStatus } from "@/components/app/VoteStatus";
 import { DepositPanel } from "@/components/app/DepositPanel";
+import { WithdrawalPanel } from "@/components/app/WithdrawalPanel";
 import { PageContainer, Card, Button, Stat } from "@/components/ui/primitives";
 import { Loader, CheckCircle, XCircle, Users, Clock, ArrowLeft, UserPlus } from "lucide-react";
 import Link from "next/link";
 
 export function DesktopGroupDetail({ address }: { address: `0x${string}` }) {
   const { address: wallet } = useAccount();
-  const [withdrawAmount, setWithdrawAmount] = useState("");
-  const [withdrawReason, setWithdrawReason] = useState("");
   const [inviteAddr, setInviteAddr] = useState("");
 
   const { data } = useReadContracts({
@@ -58,8 +57,6 @@ export function DesktopGroupDetail({ address }: { address: `0x${string}` }) {
   const tokenLabel = token ? (TOKEN_LABELS[token] ?? "token") : "—";
   const depositFmt = depositAmount ? formatUnits(depositAmount, decimals) : "—";
 
-  const { writeContract: requestW, data: wHash, isPending: wPending } = useWriteContract();
-  const { isLoading: wConfirming, isSuccess: wDone } = useWaitForTransactionReceipt({ hash: wHash });
   const { writeContract: castVote, isPending: voting } = useWriteContract();
   const { writeContract: finalizeVote, data: fHash, isPending: fPending } = useWriteContract();
   const { isLoading: fConfirming, isSuccess: fDone } = useWaitForTransactionReceipt({ hash: fHash });
@@ -141,16 +138,7 @@ export function DesktopGroupDetail({ address }: { address: `0x${string}` }) {
           {isMember && !activeRequestId && (
             <Card>
               <h2 className="text-black text-lg font-semibold mb-4">Request Withdrawal</h2>
-              <div className="space-y-3 mb-4">
-                <input type="number" placeholder={`Amount (${tokenLabel})`} value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)} className={inputCls} />
-                <input type="text" placeholder="Reason (text or IPFS URI)" value={withdrawReason} onChange={e => setWithdrawReason(e.target.value)} className={inputCls} />
-              </div>
-              <Button variant="dark" fullWidth
-                onClick={() => requestW({ address, abi: ArisanGroupABI, functionName: "requestWithdrawal", args: [parseUnits(withdrawAmount||"0",18), withdrawReason] })}
-                disabled={wPending || wConfirming || !withdrawAmount || !withdrawReason}>
-                {(wPending || wConfirming) && <Loader className="w-4 h-4 animate-spin" />}
-                {wPending ? "Confirm…" : wConfirming ? "Submitting…" : wDone ? "Submitted ✓" : "Request Withdrawal"}
-              </Button>
+              <WithdrawalPanel group={address} token={token} decimals={decimals} tokenLabel={tokenLabel} />
             </Card>
           )}
 
