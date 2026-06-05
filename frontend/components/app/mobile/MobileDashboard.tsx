@@ -122,6 +122,19 @@ export function MobileDashboard() {
           <div className="space-y-3">
             {groupList.map(addr => <GroupCard key={addr} address={addr} />)}
           </div>
+        ) : filterMode !== "all" && counts[filterMode] === 0 ? (
+          <div className="bg-white rounded-2xl card-shadow px-4 py-10 text-center">
+            <div className="text-4xl mb-3">{filterMode === "created" ? "🏗️" : "🤝"}</div>
+            <p className="font-semibold text-black/60 text-sm">
+              {filterMode === "created" ? "No groups created yet" : "No groups joined yet"}
+            </p>
+            <p className="text-xs text-black/35 mt-1 mb-4">
+              {filterMode === "created" ? "Start your own arisan" : "Join one you're invited to"}
+            </p>
+            <ButtonLink href={filterMode === "created" ? "/app/create" : "/app/groups"} className="!rounded-full">
+              {filterMode === "created" ? <><Plus className="w-4 h-4" /> Create Group</> : "Browse Groups"}
+            </ButtonLink>
+          </div>
         ) : allGroups.length > 0 ? (
           <div className="bg-white rounded-2xl card-shadow px-4 py-8 text-center">
             <p className="text-sm text-black/40">No groups match &ldquo;{query}&rdquo;.</p>
