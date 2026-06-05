@@ -4,6 +4,7 @@ import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { ArisanGroupABI } from "@/abis/ArisanGroup";
 import { ERC20ABI } from "@/abis/ERC20";
 import { useDepositGate } from "@/hooks/useDepositGate";
+import { useToast } from "@/components/ui/Toast";
 import { Loader, AlertTriangle, ShieldCheck } from "lucide-react";
 
 /**
@@ -35,16 +36,28 @@ export function DepositPanel({
   size?: "md" | "lg";
 }) {
   const gate = useDepositGate(group, token, owner, depositAmount);
+  const { toast } = useToast();
 
   const { writeContract: approve, data: aHash, isPending: aPending } = useWriteContract();
   const { isLoading: aConfirming, isSuccess: aDone } = useWaitForTransactionReceipt({ hash: aHash });
   const { writeContract: deposit, data: dHash, isPending: dPending } = useWriteContract();
   const { isLoading: dConfirming, isSuccess: dDone } = useWaitForTransactionReceipt({ hash: dHash });
 
-  // After approve or deposit confirms, re-read balance + allowance.
+  // After approve confirms, re-read the gate and tell the user they can deposit.
   useEffect(() => {
-    if (aDone || dDone) gate.refetch();
-  }, [aDone, dDone]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (aDone) {
+      gate.refetch();
+      toast("success", "Approved — you can deposit now.");
+    }
+  }, [aDone]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // After deposit confirms, re-read balance and confirm.
+  useEffect(() => {
+    if (dDone) {
+      gate.refetch();
+      toast("success", "Deposit confirmed ✓");
+    }
+  }, [dDone]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const btn =
     size === "lg"
