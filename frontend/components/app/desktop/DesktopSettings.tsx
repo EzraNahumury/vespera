@@ -48,14 +48,14 @@ export function DesktopSettings() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] px-6 py-10">
+    <div className="min-h-screen bg-[#F2F2F7] px-6 py-10">
       <div className="max-w-[88rem] mx-auto">
         <h1 className="text-4xl font-medium text-black mb-10" style={{ letterSpacing: "-0.03em" }}>Settings</h1>
 
         <div className="grid grid-cols-4 gap-6 items-start">
 
           {/* Sidebar */}
-          <nav className="col-span-1 rounded-2xl bg-white border border-black/5 p-2 sticky top-24">
+          <nav className="col-span-1 rounded-2xl bg-white card-shadow p-2 sticky top-24">
             {navItems.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
@@ -71,15 +71,17 @@ export function DesktopSettings() {
               </button>
             ))}
 
-            <div className="mt-2 pt-2 border-t border-black/5">
-              <button
-                onClick={() => disconnect()}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
-              >
-                <LogOut className="w-4 h-4 shrink-0" />
-                Disconnect Wallet
-              </button>
-            </div>
+            {isConnected && (
+              <div className="mt-2 pt-2 border-t border-black/5">
+                <button
+                  onClick={() => disconnect()}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
+                >
+                  <LogOut className="w-4 h-4 shrink-0" />
+                  Disconnect Wallet
+                </button>
+              </div>
+            )}
           </nav>
 
           {/* Content */}
@@ -87,7 +89,7 @@ export function DesktopSettings() {
 
             {/* ── AI Agent ── */}
             {activeSection === "agent" && (
-              <div className="rounded-2xl bg-white border border-black/5 p-8">
+              <div className="rounded-2xl bg-white card-shadow p-8">
                 <div className="mb-6">
                   <h2 className="text-2xl font-medium text-black mb-2">AI Agent Type</h2>
                   <p className="text-black/50 text-sm leading-relaxed max-w-xl">
@@ -176,13 +178,13 @@ export function DesktopSettings() {
 
             {/* ── Account ── */}
             {activeSection === "account" && (
-              <div className="rounded-2xl bg-white border border-black/5 p-8">
+              <div className="rounded-2xl bg-white card-shadow p-8">
                 <h2 className="text-2xl font-medium text-black mb-6">Account</h2>
 
                 {isConnected && address ? (
                   <div className="space-y-4">
                     {/* Wallet */}
-                    <div className="rounded-2xl bg-[#F5F5F5] p-5">
+                    <div className="rounded-2xl bg-[#F2F2F7] p-5">
                       <p className="text-xs text-black/40 uppercase tracking-wider mb-2">Connected Wallet</p>
                       <div className="flex items-center justify-between">
                         <span className="font-mono text-black text-sm">{address}</span>
@@ -201,7 +203,7 @@ export function DesktopSettings() {
                       href={`https://celoscan.io/address/${address}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex items-center justify-between rounded-2xl bg-[#F5F5F5] p-5 hover:bg-black/5 transition-colors"
+                      className="flex items-center justify-between rounded-2xl bg-[#F2F2F7] p-5 hover:bg-black/5 transition-colors"
                     >
                       <span className="text-sm text-black/70">View on Celoscan</span>
                       <ExternalLink className="w-4 h-4 text-black/30" />
@@ -209,7 +211,7 @@ export function DesktopSettings() {
 
                     <a
                       href="/app/reputation"
-                      className="flex items-center justify-between rounded-2xl bg-[#F5F5F5] p-5 hover:bg-black/5 transition-colors"
+                      className="flex items-center justify-between rounded-2xl bg-[#F2F2F7] p-5 hover:bg-black/5 transition-colors"
                     >
                       <span className="text-sm text-black/70">View Reputation & Badges</span>
                       <ChevronRight className="w-4 h-4 text-black/30" />
@@ -236,7 +238,7 @@ export function DesktopSettings() {
             {/* ── About ── */}
             {activeSection === "about" && (
               <div className="space-y-4">
-                <div className="rounded-2xl bg-white border border-black/5 p-8">
+                <div className="rounded-2xl bg-white card-shadow p-8">
                   <h2 className="text-2xl font-medium text-black mb-2">About Vespera</h2>
                   <p className="text-black/50 text-sm leading-relaxed max-w-xl">
                     Vespera is a decentralized rotating savings (arisan) protocol built on the Celo blockchain, powered by multi-agent AI and on-chain reputation.
@@ -266,7 +268,7 @@ export function DesktopSettings() {
                     ],
                   },
                 ].map(({ title, items }) => (
-                  <div key={title} className="rounded-2xl bg-white border border-black/5 p-6">
+                  <div key={title} className="rounded-2xl bg-white card-shadow p-6">
                     <p className="text-xs text-black/40 uppercase tracking-wider mb-4">{title}</p>
                     <ul className="space-y-3">
                       {items.map(({ label, value }) => (
@@ -280,7 +282,7 @@ export function DesktopSettings() {
                 ))}
 
                 {/* Links */}
-                <div className="rounded-2xl bg-white border border-black/5 p-6 space-y-2">
+                <div className="rounded-2xl bg-white card-shadow p-6 space-y-2">
                   {[
                     { label: "GitHub Repository", href: "https://github.com/EzraNahumury/vespera", icon: GitBranch },
                     { label: "View on Celoscan", href: "https://celoscan.io", icon: ExternalLink },

@@ -17,12 +17,12 @@ export function Navbar() {
 
   return (
     <>
-      <nav className="absolute top-0 left-0 right-0 z-20 px-6 py-5">
+      <nav className="absolute top-0 left-0 right-0 z-20 px-6 md:px-10 py-5">
         <div className="flex items-center justify-between max-w-[88rem] mx-auto">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <LogoIcon className="w-7 h-7 text-black" />
-            <span className="text-2xl font-medium tracking-tight text-black">Vespera</span>
+            <LogoIcon className="w-7 h-7 text-white" />
+            <span className="text-2xl font-semibold tracking-tight text-white">Vespera</span>
           </Link>
 
           {/* Desktop links */}
@@ -31,7 +31,7 @@ export function Navbar() {
               <a
                 key={href}
                 href={href}
-                className="text-base text-gray-700 hover:text-black font-medium transition-colors duration-200"
+                className="text-sm text-white/60 hover:text-white font-medium transition-colors duration-200"
               >
                 {label}
               </a>
@@ -39,14 +39,14 @@ export function Navbar() {
           </div>
 
           <div className="flex items-center gap-3">
-            <WalletButton className="bg-[#86EFAC] text-black text-base font-medium px-7 py-2.5 rounded-full hover:bg-[#4ADE80] transition-colors duration-200" />
+            <WalletButton className="bg-[#86EFAC] text-black text-sm font-semibold px-6 py-2.5 rounded-full hover:bg-[#4ADE80] transition-colors duration-200" />
             {/* Mobile hamburger */}
             <button
-              className="md:hidden p-2 rounded-xl hover:bg-black/5 transition-colors"
+              className="md:hidden p-2 rounded-xl hover:bg-white/10 transition-colors"
               onClick={() => setOpen(!open)}
               aria-label="Toggle menu"
             >
-              {open ? <X className="w-5 h-5 text-black" /> : <Menu className="w-5 h-5 text-black" />}
+              {open ? <X className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5 text-white" />}
             </button>
           </div>
         </div>

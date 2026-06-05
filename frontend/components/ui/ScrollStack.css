@@ -1,32 +1,36 @@
 .scroll-stack-scroller {
   position: relative;
   width: 100%;
+}
+
+.scroll-stack-scroller--internal {
   height: 100%;
   overflow-y: auto;
   overflow-x: visible;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
   will-change: scroll-position;
 }
 
+.scroll-stack-scroller--window {
+  overflow: visible;
+}
+
 .scroll-stack-inner {
-  padding: 10vh 0 50rem;
+  padding: 8vh 0 20vh;
   min-height: 100vh;
 }
 
 .scroll-stack-card {
   transform-origin: top center;
-  will-change: transform, filter;
-  backface-visibility: hidden;
-  transform-style: preserve-3d;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  will-change: transform;
+  /* No box-shadow — triggers repaint every RAF frame */
+  /* No backface-visibility — sub-pixel flicker on some GPUs */
+  /* No transform-style:preserve-3d — same issue */
+  /* No contain — interferes with z-index stacking */
   width: 100%;
   border-radius: 24px;
   box-sizing: border-box;
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
   position: relative;
   overflow: hidden;
 }

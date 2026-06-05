@@ -1,8 +1,9 @@
 "use client";
 import { useAccount } from "wagmi";
 import { useReputation } from "@/hooks/useReputation";
+import { useBadges } from "@/hooks/useBadges";
 import { TIER_LABELS, TIER_COLORS, BADGE_LABELS } from "@/lib/chain";
-import { Shield } from "lucide-react";
+import { Shield, Lock } from "lucide-react";
 import { ReputationGauge } from "@/components/ui/ReputationGauge";
 
 const TIER_BG = ["#1A0F00", "#111318", "#1A1400", "#001A0A"];
@@ -17,8 +18,10 @@ const BADGE_DESCS = [
 function ReputationContent() {
   const { address, isConnected } = useAccount();
   const { data } = useReputation(address);
+  const { data: badges } = useBadges(address);
   const score = data?.[0]?.result ? Number(data[0].result) : 0;
   const tier = data?.[1]?.result !== undefined ? Number(data[1].result) : 0;
+  const owned = (i: number) => Boolean(badges?.[i]?.result);
 
   if (!isConnected) return (
     <div className="flex-1 flex items-center justify-center p-10">
@@ -83,8 +86,8 @@ function ReputationContent() {
       </div>
 
       {/* Score breakdown */}
-      <div className="rounded-2xl bg-white border border-black/5 p-6 mb-6">
-        <h2 className="text-black font-medium mb-5">Score Breakdown</h2>
+      <div className="rounded-2xl bg-white card-shadow p-6 mb-6">
+        <h2 className="text-black font-semibold mb-5">Score Breakdown</h2>
         <div className="space-y-3">
           {[
             { label: "Deposit Consistency", weight: 40, score: score * 0.4 },
@@ -114,25 +117,38 @@ function ReputationContent() {
       </div>
 
       {/* Soulbound Badges */}
-      <h2 className="text-black text-xl font-medium mb-4">Soulbound Badges</h2>
+      <div className="flex items-baseline gap-3 mb-4">
+        <h2 className="text-black text-xl font-medium">Soulbound Badges</h2>
+        <span className="text-sm text-black/40">
+          {BADGE_LABELS.filter((_, i) => owned(i)).length} / {BADGE_LABELS.length} earned
+        </span>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {BADGE_LABELS.map((label, i) => (
-          <div
-            key={i}
-            className="rounded-2xl bg-white p-5 border border-black/5 flex items-center gap-4 hover:border-black/10 transition-colors"
-          >
+        {BADGE_LABELS.map((label, i) => {
+          const has = owned(i);
+          return (
             <div
-              className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-              style={{ backgroundColor: "rgba(0,0,0,0.05)" }}
+              key={i}
+              className={`rounded-2xl p-5 flex items-center gap-4 transition-colors ${
+                has ? "bg-white border-2 border-[#86EFAC]" : "bg-white/60 card-shadow"
+              }`}
             >
-              <Shield className="w-5 h-5 text-black/25" />
+              <div
+                className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                style={{ backgroundColor: has ? "#86EFAC" : "rgba(0,0,0,0.05)" }}
+              >
+                {has ? <Shield className="w-5 h-5 text-black" /> : <Lock className="w-5 h-5 text-black/25" />}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <p className={`font-medium text-sm ${has ? "text-black" : "text-black/40"}`}>{label}</p>
+                  {has && <span className="text-[10px] font-semibold bg-[#86EFAC] text-[#14532D] px-1.5 py-0.5 rounded-full">Earned</span>}
+                </div>
+                <p className="text-black/35 text-xs mt-0.5 leading-relaxed">{BADGE_DESCS[i]}</p>
+              </div>
             </div>
-            <div>
-              <p className="font-medium text-black text-sm">{label}</p>
-              <p className="text-black/35 text-xs mt-0.5 leading-relaxed">{BADGE_DESCS[i]}</p>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -140,7 +156,7 @@ function ReputationContent() {
 
 export default function ReputationPage() {
   return (
-    <div className="min-h-screen bg-[#F5F5F5] pb-24 md:pb-0">
+    <div className="min-h-screen bg-[#F2F2F7] pb-24 md:pb-0">
       <ReputationContent />
     </div>
   );

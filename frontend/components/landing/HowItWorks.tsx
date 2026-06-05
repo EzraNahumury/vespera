@@ -2,6 +2,7 @@
 
 import { useIsMobile } from "@/hooks/useIsMobile";
 import ScrollStack, { ScrollStackItem } from "@/components/ui/ScrollStack";
+import { Zap, Scale, Ban } from "lucide-react";
 
 const steps = [
   {
@@ -76,22 +77,46 @@ function SectionHeader() {
   );
 }
 
+const routeIcons = [Zap, Scale, Ban];
+const routePct = [92, 67, 30];
+
 function ConfidenceRouting() {
   return (
     <div className="max-w-[88rem] mx-auto px-4 md:px-6 pb-24">
-      <div className="rounded-3xl bg-[#0f2d1a] p-7 md:p-10 border border-white/5">
-        <div className="flex items-center gap-2 mb-6">
-          <span className="w-2 h-2 rounded-full bg-[#4ADE80] animate-pulse" />
-          <p className="text-white/50 text-sm font-medium uppercase tracking-wider">AI Confidence Routing</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {confidence.map(({ range, label, sub, color, bg }) => (
-            <div key={label} className="rounded-2xl p-5 border border-white/5" style={{ backgroundColor: bg }}>
-              <span className="text-3xl font-medium tracking-tight" style={{ color, letterSpacing: "-0.02em" }}>{range}</span>
-              <p className="text-white font-medium mt-2 mb-1">{label}</p>
-              <p className="text-white/40 text-xs leading-relaxed">{sub}</p>
-            </div>
-          ))}
+      <div className="relative rounded-[28px] bg-[#0c2417] p-7 md:p-12 overflow-hidden">
+        {/* soft glow */}
+        <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-[#86EFAC]/10 blur-3xl pointer-events-none" />
+
+        <div className="relative">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="w-2 h-2 rounded-full bg-[#4ADE80] animate-pulse" />
+            <p className="text-[#86EFAC] text-xs font-semibold uppercase tracking-widest">AI Confidence Routing</p>
+          </div>
+          <p className="text-white/50 text-sm max-w-xl mb-8 leading-relaxed">
+            The Requester Agent scores every withdrawal. Higher confidence means a faster path to payout — lower confidence demands broader consensus.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {confidence.map(({ range, label, sub, color }, i) => {
+              const Icon = routeIcons[i];
+              return (
+                <div key={label} className="rounded-2xl bg-white/[0.04] border border-white/[0.06] p-6 hover:bg-white/[0.07] transition-colors">
+                  <div className="flex items-center justify-between mb-5">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${color}1f` }}>
+                      <Icon className="w-4 h-4" style={{ color }} />
+                    </div>
+                    <span className="text-2xl font-semibold tracking-tight" style={{ color, letterSpacing: "-0.02em" }}>{range}</span>
+                  </div>
+                  {/* confidence meter */}
+                  <div className="h-1 rounded-full bg-white/[0.08] overflow-hidden mb-4">
+                    <div className="h-full rounded-full" style={{ width: `${routePct[i]}%`, backgroundColor: color }} />
+                  </div>
+                  <p className="text-white font-semibold mb-1">{label}</p>
+                  <p className="text-white/40 text-xs leading-relaxed">{sub}</p>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
@@ -132,12 +157,13 @@ function MobileSteps() {
   );
 }
 
-/* ─── Desktop: ScrollStack ─── */
+/* ─── Desktop: ScrollStack (window scroll — no trapped scroll) ─── */
 function DesktopSteps() {
   return (
-    <div style={{ height: "100vh", position: "relative" }}>
+    <div className="max-w-[88rem] mx-auto px-6">
       <ScrollStack
-        itemDistance={120}
+        useWindowScroll={true}
+        itemDistance={100}
         itemScale={0.04}
         itemStackDistance={24}
         stackPosition="15%"

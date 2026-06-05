@@ -1,60 +1,113 @@
 "use client";
+import { useState } from "react";
 import { useAccount } from "wagmi";
 import { useAllGroups } from "@/hooks/useGroups";
 import { useReputation } from "@/hooks/useReputation";
 import { GroupCard } from "@/components/app/GroupCard";
 import { ReputationGauge } from "@/components/ui/ReputationGauge";
+import { PageContainer, PageHeader, SectionLabel, ButtonLink } from "@/components/ui/primitives";
+import { Search, Plus, Users, Wallet, Star, ChevronRight } from "lucide-react";
 import Link from "next/link";
+
+const quickActions = [
+  { label: "Create a Group", sub: "Start a new arisan", href: "/app/create", icon: Wallet },
+  { label: "Browse Groups", sub: "Join an existing group", href: "/app/groups", icon: Users },
+  { label: "My Reputation", sub: "Score & badges", href: "/app/reputation", icon: Star },
+];
 
 export function DesktopDashboard() {
   const { address, isConnected } = useAccount();
   const { data: groups, isLoading } = useAllGroups();
   const { data: repData } = useReputation(address);
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<"default" | "az" | "za">("default");
 
   const score = repData?.[0]?.result ? Number(repData[0].result) : 0;
-  const tier = repData?.[1]?.result !== undefined ? Number(repData[1].result) : 0;
+
+  const allGroups = (groups as `0x${string}`[] | undefined) ?? [];
+  const searched = query ? allGroups.filter(a => a.toLowerCase().includes(query.toLowerCase())) : allGroups;
+  const filtered = sort === "default" ? searched
+    : [...searched].sort((a, b) => (sort === "az" ? a.localeCompare(b) : b.localeCompare(a)));
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] px-6 py-10">
-      <div className="max-w-[88rem] mx-auto">
-        <div className="mb-10">
-          <h1 className="text-4xl font-medium text-black tracking-tight" style={{ letterSpacing: "-0.03em" }}>Dashboard</h1>
-          <p className="text-black/50 mt-1">Welcome to Vespera — your arisan, on-chain.</p>
-        </div>
+    <PageContainer>
+      <PageHeader title="Dashboard" subtitle="Welcome to Vespera — your arisan, on-chain." />
 
+      <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-6 mb-10 items-start">
+        {/* Reputation gauge */}
         {isConnected && address && (
-          <div className="mb-10 flex justify-start">
-            <Link href="/app/reputation">
-              <ReputationGauge score={score} size={320} />
-            </Link>
-          </div>
-        )}
-
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-black text-xl font-medium">All Groups</h2>
-          <Link href="/app/create" className="inline-flex items-center gap-2 bg-[#86EFAC] text-black text-sm font-medium px-5 py-2 rounded-full hover:bg-[#4ADE80] transition-colors">
-            + New Group
+          <Link href="/app/reputation" className="transition-transform hover:scale-[1.01]">
+            <ReputationGauge score={score} size={340} />
           </Link>
-        </div>
-
-        {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map(i => <div key={i} className="rounded-2xl bg-white/50 h-40 animate-pulse" />)}
-          </div>
-        ) : groups && (groups as `0x${string}`[]).length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {(groups as `0x${string}`[]).map(addr => <GroupCard key={addr} address={addr} />)}
-          </div>
-        ) : (
-          <div className="rounded-2xl border-2 border-dashed border-black/10 p-16 text-center">
-            <p className="text-black/40 text-lg">No groups yet.</p>
-            <p className="text-black/30 text-sm mt-1">Create the first arisan group on Vespera.</p>
-            <Link href="/app/create" className="inline-block mt-4 bg-[#86EFAC] text-black px-6 py-2.5 rounded-full text-sm font-medium hover:bg-[#4ADE80] transition-colors">
-              Create Group
-            </Link>
-          </div>
         )}
+
+        {/* Quick actions */}
+        <div>
+          <SectionLabel>Quick Actions</SectionLabel>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {quickActions.map(({ label, sub, href, icon: Icon }) => (
+              <Link key={href} href={href}
+                className="bg-white rounded-2xl card-shadow p-5 hover:shadow-md transition-shadow group">
+                <div className="w-10 h-10 rounded-xl bg-[#86EFAC]/25 flex items-center justify-center mb-3 group-hover:bg-[#86EFAC] transition-colors">
+                  <Icon className="w-5 h-5 text-[#14532D]" />
+                </div>
+                <p className="font-semibold text-black text-sm">{label}</p>
+                <p className="text-black/40 text-xs mt-0.5">{sub}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
       </div>
-    </div>
+
+      {/* Groups */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        <h2 className="text-black text-xl font-semibold shrink-0">All Groups</h2>
+        <div className="flex items-center gap-2 sm:ml-auto">
+          <div className="relative flex-1 sm:flex-none sm:w-56">
+            <Search className="w-4 h-4 text-black/30 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search address…"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              className="w-full rounded-xl border border-black/[0.08] bg-white pl-9 pr-4 py-2.5 text-sm outline-none focus:border-[#86EFAC] transition-colors"
+            />
+          </div>
+          <select
+            value={sort}
+            onChange={e => setSort(e.target.value as "default" | "az" | "za")}
+            className="rounded-xl border border-black/[0.08] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#86EFAC] shrink-0"
+          >
+            <option value="default">Default</option>
+            <option value="az">A–Z</option>
+            <option value="za">Z–A</option>
+          </select>
+          <ButtonLink href="/app/create" className="shrink-0 !py-2.5">
+            <Plus className="w-4 h-4" /> New
+          </ButtonLink>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {[1, 2, 3].map(i => <div key={i} className="rounded-2xl bg-white card-shadow h-24 animate-pulse" />)}
+        </div>
+      ) : filtered.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {filtered.map(addr => <GroupCard key={addr} address={addr} />)}
+        </div>
+      ) : allGroups.length > 0 ? (
+        <div className="bg-white rounded-2xl card-shadow p-12 text-center">
+          <p className="text-black/40">No groups match &ldquo;{query}&rdquo;.</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl card-shadow p-14 text-center">
+          <div className="text-5xl mb-4">🏦</div>
+          <p className="font-semibold text-black/70">No groups yet</p>
+          <p className="text-black/40 text-sm mt-1 mb-5">Create the first arisan group on Vespera.</p>
+          <ButtonLink href="/app/create"><Plus className="w-4 h-4" /> Create Group</ButtonLink>
+        </div>
+      )}
+    </PageContainer>
   );
 }
