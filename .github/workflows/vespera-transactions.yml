@@ -1,0 +1,116 @@
+name: Vespera transactions
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "auto, deposit, request-withdrawal, init-vote, cast-vote, finalize, configure-agent"
+        required: true
+        default: "auto"
+        type: choice
+        options:
+          - auto
+          - deposit
+          - request-withdrawal
+          - init-vote
+          - cast-vote
+          - finalize
+          - configure-agent
+      dry_run:
+        description: "Simulate only. Set false to send a real mainnet transaction."
+        required: true
+        default: true
+        type: boolean
+      group_address:
+        description: "Optional ArisanGroup address. Auto scans GroupRegistry when empty."
+        required: false
+        type: string
+      request_id:
+        description: "Required for init-vote, cast-vote, and finalize."
+        required: false
+        type: string
+      confidence_bps:
+        description: "AI confidence in basis points for init-vote."
+        required: false
+        default: "8500"
+        type: string
+      vote_support:
+        description: "Support vote for cast-vote."
+        required: false
+        default: true
+        type: boolean
+      auto_deposit:
+        description: "Allow auto mode to deposit real arisan contributions."
+        required: false
+        default: false
+        type: boolean
+      agent_address:
+        description: "Required for configure-agent."
+        required: false
+        type: string
+      withdraw_amount:
+        description: "Human token amount for request-withdrawal."
+        required: false
+        type: string
+      reason_uri:
+        description: "Reason URI for request-withdrawal."
+        required: false
+        default: "ipfs://vespera-automation-request"
+        type: string
+
+  schedule:
+    - cron: "*/30 * * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vespera-transactions
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Vespera transaction automation
+        env:
+          PRIVATE_KEY: ${{ secrets.VESPERA_TX_PRIVATE_KEY }}
+          RPC_URL: ${{ secrets.CELO_RPC_URL || vars.CELO_RPC_URL || 'https://forno.celo.org' }}
+
+          ACTION: ${{ github.event_name == 'workflow_dispatch' && inputs.action || vars.VESPERA_TX_ACTION || 'auto' }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && format('{0}', inputs.dry_run) || vars.VESPERA_TX_DRY_RUN || '1' }}
+          GROUP_ADDRESS: ${{ github.event_name == 'workflow_dispatch' && inputs.group_address || vars.VESPERA_GROUP_ADDRESS || '' }}
+          REQUEST_ID: ${{ github.event_name == 'workflow_dispatch' && inputs.request_id || vars.VESPERA_REQUEST_ID || '' }}
+
+          CONFIDENCE_BPS: ${{ github.event_name == 'workflow_dispatch' && inputs.confidence_bps || vars.VESPERA_CONFIDENCE_BPS || '8500' }}
+          VOTE_SUPPORT: ${{ github.event_name == 'workflow_dispatch' && format('{0}', inputs.vote_support) || vars.VESPERA_VOTE_SUPPORT || '1' }}
+          AUTO_DEPOSIT: ${{ github.event_name == 'workflow_dispatch' && format('{0}', inputs.auto_deposit) || vars.VESPERA_AUTO_DEPOSIT || '0' }}
+          AUTO_INIT_VOTE: ${{ vars.VESPERA_AUTO_INIT_VOTE || '1' }}
+          AUTO_CAST_VOTE: ${{ vars.VESPERA_AUTO_CAST_VOTE || '1' }}
+          AUTO_FINALIZE: ${{ vars.VESPERA_AUTO_FINALIZE || '1' }}
+          MAX_GROUPS: ${{ vars.VESPERA_MAX_GROUPS || '10' }}
+
+          AGENT_ADDRESS: ${{ github.event_name == 'workflow_dispatch' && inputs.agent_address || vars.VESPERA_AGENT_ADDRESS || '' }}
+          POLICY_URI: ${{ vars.VESPERA_POLICY_URI || 'ipfs://vespera-policy-balanced-v1' }}
+          WITHDRAW_AMOUNT: ${{ github.event_name == 'workflow_dispatch' && inputs.withdraw_amount || vars.VESPERA_WITHDRAW_AMOUNT || '' }}
+          REASON_URI: ${{ github.event_name == 'workflow_dispatch' && inputs.reason_uri || vars.VESPERA_REASON_URI || 'ipfs://vespera-automation-request' }}
+        run: npm run tx:vespera

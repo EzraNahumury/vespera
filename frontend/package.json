@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "tx:vespera": "node scripts/vespera-tx.mjs"
   },
   "dependencies": {
     "@rainbow-me/rainbowkit": "^2.2.11",
