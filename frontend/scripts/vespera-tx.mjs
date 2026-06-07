@@ -605,7 +605,28 @@ async function main() {
     return;
   }
 
-  const group = normalizeAddress(process.env.GROUP_ADDRESS || groups[0], "GROUP_ADDRESS");
+  // For deposit with no explicit GROUP_ADDRESS, auto-detect which group this wallet belongs to.
+  let group;
+  if (!process.env.GROUP_ADDRESS && action === "deposit" && groups.length > 1 && signerAddress) {
+    const checks = await Promise.all(
+      groups.map((g) =>
+        publicClient
+          .readContract({ address: g, abi: ARISAN_GROUP_ABI, functionName: "isMember", args: [signerAddress] })
+          .then((isMember) => ({ g, isMember }))
+          .catch(() => ({ g, isMember: false })),
+      ),
+    );
+    const found = checks.find(({ isMember }) => isMember);
+    if (!found) {
+      info(`deposit: signer ${signerAddress} is not a member of any group in allowlist`);
+      return;
+    }
+    group = normalizeAddress(found.g, "GROUP_ADDRESS");
+    info(`deposit: auto-detected group ${short(found.g)} for signer ${short(signerAddress)}`);
+  } else {
+    group = normalizeAddress(process.env.GROUP_ADDRESS || groups[0], "GROUP_ADDRESS");
+  }
+
   const requestId = process.env.REQUEST_ID ? BigInt(process.env.REQUEST_ID) : undefined;
 
   if (action === "auto") {

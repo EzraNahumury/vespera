@@ -73,7 +73,7 @@ jobs:
           GROUP_ADDRESS: ${{ vars.VESPERA_DAU_GROUP_ADDRESS || vars.VESPERA_GROUP_ADDRESS || '' }}
           GROUP_ALLOWLIST: ${{ vars.VESPERA_GROUP_ALLOWLIST || '' }}
           MAX_AMOUNT: ${{ vars.VESPERA_MAX_AMOUNT || '' }}
-          MAX_GROUPS: "1"
+          MAX_GROUPS: "50"
           AUTO_DEPOSIT: ${{ vars.VESPERA_DAU_AUTO_DEPOSIT || '0' }}
           AUTO_INIT_VOTE: ${{ vars.VESPERA_AUTO_INIT_VOTE || '1' }}
           AUTO_CAST_VOTE: ${{ vars.VESPERA_AUTO_CAST_VOTE || '1' }}
