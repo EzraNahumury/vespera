@@ -12,6 +12,9 @@ node_modules/
 frontend/testnet-wallets/
 frontend/e2e-wallets.json
 
+# Mainnet wallet batches with private keys
+frontend/wallets/
+
 # Build outputs
 dist/
 build/

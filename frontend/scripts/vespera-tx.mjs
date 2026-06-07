@@ -297,6 +297,13 @@ function info(message) {
   console.log(`[vespera-tx] ${message}`);
 }
 
+async function assertCeloMainnet() {
+  const chainId = await publicClient.getChainId();
+  if (chainId !== celo.id) {
+    die(`refusing to run: RPC is chain ${chainId}, expected Celo mainnet ${celo.id}.`);
+  }
+}
+
 async function readTokenMeta(token) {
   const [symbol, decimals] = await Promise.all([
     publicClient.readContract({ address: token, abi: ERC20_ABI, functionName: "symbol" }).catch(() => "TOKEN"),
@@ -575,6 +582,7 @@ async function autoGroup(group) {
 }
 
 async function main() {
+  await assertCeloMainnet();
   Object.entries(CONTRACTS).forEach(([name, address]) => normalizeAddress(address, name.toUpperCase()));
   if (confidenceBps < 0 || confidenceBps > 10_000) die("CONFIDENCE_BPS must be between 0 and 10000.");
 

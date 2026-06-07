@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "tx:vespera": "node scripts/vespera-tx.mjs"
+    "tx:vespera": "node scripts/vespera-tx.mjs",
+    "tx:vespera:batch": "node scripts/vespera-wallet-batch.mjs",
+    "tx:vespera:fund-batch": "node scripts/vespera-fund-batch.mjs"
   },
   "dependencies": {
     "@rainbow-me/rainbowkit": "^2.2.11",
