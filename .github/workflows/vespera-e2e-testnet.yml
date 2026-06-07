@@ -1,4 +1,4 @@
-name: Vespera E2E (Alfajores testnet)
+name: Vespera TESTNET - E2E Alfajores only
 
 # Functional verification ONLY. Deploys a FRESH instance of the Vespera contracts to Celo
 # Alfajores (testnet, chainId 44787), then runs one full arisan lifecycle with throwaway

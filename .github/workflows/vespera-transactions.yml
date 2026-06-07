@@ -1,4 +1,4 @@
-name: Vespera transactions
+name: Vespera MAINNET - batch transactions
 
 on:
   workflow_dispatch:

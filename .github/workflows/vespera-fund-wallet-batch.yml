@@ -1,4 +1,4 @@
-name: Vespera fund wallet batch
+name: Vespera MAINNET - fund wallet batch
 
 on:
   workflow_dispatch:
