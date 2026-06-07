@@ -57,6 +57,10 @@ on:
         required: false
         default: "ipfs://vespera-automation-request"
         type: string
+      max_amount:
+        description: "Money guardrail: skip any request above this human token amount. Empty = uncapped."
+        required: false
+        type: string
 
   schedule:
     - cron: "*/30 * * * *"
@@ -108,6 +112,10 @@ jobs:
           AUTO_CAST_VOTE: ${{ vars.VESPERA_AUTO_CAST_VOTE || '1' }}
           AUTO_FINALIZE: ${{ vars.VESPERA_AUTO_FINALIZE || '1' }}
           MAX_GROUPS: ${{ vars.VESPERA_MAX_GROUPS || '10' }}
+
+          # Money guardrails (empty = off, preserving prior behaviour)
+          MAX_AMOUNT: ${{ github.event_name == 'workflow_dispatch' && inputs.max_amount || vars.VESPERA_MAX_AMOUNT || '' }}
+          GROUP_ALLOWLIST: ${{ vars.VESPERA_GROUP_ALLOWLIST || '' }}
 
           AGENT_ADDRESS: ${{ github.event_name == 'workflow_dispatch' && inputs.agent_address || vars.VESPERA_AGENT_ADDRESS || '' }}
           POLICY_URI: ${{ vars.VESPERA_POLICY_URI || 'ipfs://vespera-policy-balanced-v1' }}
