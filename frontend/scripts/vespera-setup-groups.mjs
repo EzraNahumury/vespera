@@ -114,6 +114,7 @@ const ROUND_DURATION = BigInt(readInt("ROUND_DURATION_SECONDS", 3600, { min: 60 
 const METADATA_URI_PREFIX = process.env.METADATA_URI_PREFIX ?? "ipfs://vespera-stress-group-";
 const TX_DELAY_MS = readInt("TX_DELAY_MS", 2_000, { min: 0 });
 const MIN_GAS_BALANCE = parseEther(process.env.MIN_GAS_BALANCE_CELO ?? "0.05");
+const START_FROM_GROUP = readInt("START_FROM_GROUP", 1, { min: 1, max: 50 });
 
 // --- Helpers ---
 function die(msg) {
@@ -320,11 +321,19 @@ async function main() {
 
   const createdGroups = [];
 
+  if (START_FROM_GROUP > 1) {
+    info(`RESUME: mulai dari group ${START_FROM_GROUP} (skip group 1-${START_FROM_GROUP - 1})`);
+  }
+
   for (let i = 0; i < groups.length; i++) {
+    const groupNum = i + 1;
+    if (groupNum < START_FROM_GROUP) {
+      info(`skip group-${groupNum} (sudah dibuat sebelumnya)`);
+      continue;
+    }
     const members = groups[i];
     const creator = members[0];
     const invited = members.slice(1);
-    const groupNum = i + 1;
     const metadataURI = `${METADATA_URI_PREFIX}${groupNum}`;
 
     info(`\n=== Group ${groupNum}/${groups.length} — ${members.length} member ===`);

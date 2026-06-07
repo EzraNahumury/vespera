@@ -53,6 +53,11 @@ on:
         required: false
         default: "01,02,03,04,05"
         type: string
+      start_from_group:
+        description: "Resume dari group ke-N (skip group sebelumnya). Default 1 = mulai dari awal."
+        required: false
+        default: "1"
+        type: string
 
 permissions:
   contents: read
@@ -64,7 +69,7 @@ concurrency:
 jobs:
   setup:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120
 
     defaults:
       run:
@@ -100,6 +105,7 @@ jobs:
           DEPOSIT_AMOUNT_CELO: ${{ inputs.deposit_amount_celo }}
           ROUND_DURATION_SECONDS: ${{ inputs.round_duration_seconds }}
           TX_DELAY_MS: ${{ inputs.tx_delay_ms }}
+          START_FROM_GROUP: ${{ inputs.start_from_group }}
           # Wallet batches dari secrets
           WALLET_BATCH_01_JSON: ${{ secrets.VESPERA_WALLET_BATCH_01_JSON }}
           WALLET_BATCH_02_JSON: ${{ secrets.VESPERA_WALLET_BATCH_02_JSON }}
