@@ -304,12 +304,8 @@ async function readTokenMeta(token) {
 async function sendContract(label, params) {
   if (!signerAddress) die(`${label} needs PRIVATE_KEY or SIGNER_ADDRESS.`);
 
-  let request;
   try {
-    ({ request } = await publicClient.simulateContract({
-      ...params,
-      account: signerAddress,
-    }));
+    await publicClient.simulateContract({ ...params, account: signerAddress });
   } catch (err) {
     info(`${label}: skipped (${err.shortMessage ?? err.message ?? String(err)})`);
     return null;
@@ -330,7 +326,17 @@ async function sendContract(label, params) {
     gasEstimate = 500_000n;
   }
 
-  const hash = await walletClient.writeContract({ ...request, gas: gasEstimate });
+  let hash;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      hash = await walletClient.writeContract({ ...params, gas: gasEstimate });
+      break;
+    } catch (err) {
+      if (attempt === 3) throw err;
+      info(`${label}: tx error attempt ${attempt}/3 — retry in 3s`);
+      await new Promise((r) => setTimeout(r, 3_000));
+    }
+  }
   info(`${label}: submitted ${txUrl(hash)}`);
   await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
   info(`${label}: confirmed`);
