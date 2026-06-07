@@ -1,0 +1,109 @@
+name: Vespera MAINNET - setup groups
+
+# One-time setup: buat ArisanGroups dan distribusikan wallet ke dalamnya.
+# Jalankan SETELAH fund-wallet-batch selesai.
+#
+# Flow:
+#   1. Wallet pertama tiap group panggil createGroup
+#   2. Wallet pertama invite sisa member di groupnya
+#   3. Tiap invited wallet panggil join
+#
+# Output di log: address tiap group + VESPERA_GROUP_ALLOWLIST yang siap di-copy
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Simulate saja. Set false untuk kirim tx mainnet asli."
+        required: true
+        default: true
+        type: boolean
+      confirm_mainnet:
+        description: "Wajib true jika dry_run=false. Konfirmasi tx di mainnet."
+        required: true
+        default: false
+        type: boolean
+      group_count:
+        description: "Jumlah group yang dibuat (default 34, max 50)."
+        required: false
+        default: "34"
+        type: string
+      max_members:
+        description: "Max member per group (default 15, max 15 sesuai protokol)."
+        required: false
+        default: "15"
+        type: string
+      deposit_amount_celo:
+        description: "Deposit per round dalam CELO (default 0.01)."
+        required: false
+        default: "0.01"
+        type: string
+      round_duration_seconds:
+        description: "Durasi round dalam detik (default 3600 = 1 jam)."
+        required: false
+        default: "3600"
+        type: string
+      tx_delay_ms:
+        description: "Delay antar tx dalam ms (default 2000)."
+        required: false
+        default: "2000"
+        type: string
+      wallet_batches:
+        description: "Batch yang diload, pisah koma (default 01,02,03,04,05)."
+        required: false
+        default: "01,02,03,04,05"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vespera-setup-groups
+  cancel-in-progress: false
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Guard - live run cek
+        if: ${{ inputs.dry_run == false && inputs.confirm_mainnet == false }}
+        run: |
+          echo "::error::dry_run=false butuh confirm_mainnet=true untuk proteksi mainnet."
+          exit 1
+
+      - name: Run setup groups
+        env:
+          RPC_URL: ${{ secrets.CELO_RPC_URL || vars.CELO_RPC_URL || 'https://forno.celo.org' }}
+          DRY_RUN: ${{ format('{0}', inputs.dry_run) }}
+          CONFIRM_MAINNET: ${{ format('{0}', inputs.confirm_mainnet) }}
+          GROUP_COUNT: ${{ inputs.group_count }}
+          MAX_MEMBERS: ${{ inputs.max_members }}
+          DEPOSIT_AMOUNT_CELO: ${{ inputs.deposit_amount_celo }}
+          ROUND_DURATION_SECONDS: ${{ inputs.round_duration_seconds }}
+          TX_DELAY_MS: ${{ inputs.tx_delay_ms }}
+          # Wallet batches dari secrets
+          WALLET_BATCH_01_JSON: ${{ secrets.VESPERA_WALLET_BATCH_01_JSON }}
+          WALLET_BATCH_02_JSON: ${{ secrets.VESPERA_WALLET_BATCH_02_JSON }}
+          WALLET_BATCH_03_JSON: ${{ secrets.VESPERA_WALLET_BATCH_03_JSON }}
+          WALLET_BATCH_04_JSON: ${{ secrets.VESPERA_WALLET_BATCH_04_JSON }}
+          WALLET_BATCH_05_JSON: ${{ secrets.VESPERA_WALLET_BATCH_05_JSON }}
+        run: npm run wallets:setup-groups

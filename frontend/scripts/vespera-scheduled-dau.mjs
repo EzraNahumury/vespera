@@ -185,35 +185,52 @@ async function main() {
 
   const batches = parseBatches();
   const dayIndex = todayOrdinal - start.ordinal;
-  const batch = batchForDay(dayIndex, batches);
-  const secret = secretForBatch(batch);
-  const walletCount = parseWalletCount(secret.value, batch);
-  const { offset, limit } = slotRange(walletCount, slotIndex, slotsPerDay);
 
   info(
-    `${dryRun ? "dry-run" : "live"} scheduled DAU ${today} Asia/Jakarta day=${dayIndex} batch=${batch} slot=${slotIndex + 1}/${slotsPerDay} offset=${offset} limit=${limit}`,
+    `${dryRun ? "dry-run" : "live"} scheduled DAU ${today} Asia/Jakarta day=${dayIndex} slot=${slotIndex + 1}/${slotsPerDay} batches=${batches.join(",")}`,
   );
 
-  if (limit <= 0) {
-    info(`slot has no wallets for batch ${batch}; nothing to run`);
-    return;
+  let anyRan = false;
+  let failed = 0;
+
+  for (const batch of batches) {
+    const secret = secretForBatch(batch);
+    const walletCount = parseWalletCount(secret.value, batch);
+    const { offset, limit } = slotRange(walletCount, slotIndex, slotsPerDay);
+
+    if (limit <= 0) {
+      info(`batch=${batch} slot=${slotIndex + 1}: no wallets this slot, skip`);
+      continue;
+    }
+
+    info(`batch=${batch} offset=${offset} limit=${limit}: starting`);
+    anyRan = true;
+
+    const result = spawnSync(process.execPath, [walletBatchScript], {
+      cwd: frontendDir,
+      stdio: "inherit",
+      env: {
+        ...process.env,
+        WALLET_BATCH: batch,
+        WALLET_BATCH_JSON: secret.value,
+        WALLET_OFFSET: String(offset),
+        WALLET_LIMIT: String(limit),
+        CONTINUE_ON_ERROR: process.env.CONTINUE_ON_ERROR ?? "1",
+        MAX_WALLETS_PER_RUN: process.env.MAX_WALLETS_PER_RUN ?? "100",
+      },
+    });
+
+    if (result.status !== 0) {
+      failed += 1;
+      info(`batch=${batch}: failed with exit ${result.status}`);
+      if (!readBool("CONTINUE_ON_ERROR", true)) process.exit(result.status ?? 1);
+    } else {
+      info(`batch=${batch}: done`);
+    }
   }
 
-  const result = spawnSync(process.execPath, [walletBatchScript], {
-    cwd: frontendDir,
-    stdio: "inherit",
-    env: {
-      ...process.env,
-      WALLET_BATCH: batch,
-      WALLET_BATCH_JSON: secret.value,
-      WALLET_OFFSET: String(offset),
-      WALLET_LIMIT: String(limit),
-      CONTINUE_ON_ERROR: process.env.CONTINUE_ON_ERROR ?? "1",
-      MAX_WALLETS_PER_RUN: process.env.MAX_WALLETS_PER_RUN ?? "10",
-    },
-  });
-
-  if (result.status !== 0) process.exit(result.status ?? 1);
+  if (!anyRan) info("slot has no wallets across all batches; nothing to run");
+  if (failed > 0) process.exit(1);
 }
 
 main().catch((err) => die(err.shortMessage ?? err.message ?? String(err)));

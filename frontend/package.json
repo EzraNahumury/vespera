@@ -10,7 +10,9 @@
     "tx:vespera": "node scripts/vespera-tx.mjs",
     "tx:vespera:batch": "node scripts/vespera-wallet-batch.mjs",
     "tx:vespera:fund-batch": "node scripts/vespera-fund-batch.mjs",
-    "tx:vespera:scheduled-dau": "node scripts/vespera-scheduled-dau.mjs"
+    "tx:vespera:scheduled-dau": "node scripts/vespera-scheduled-dau.mjs",
+    "wallets:generate": "node scripts/generate-wallet-batches.mjs",
+    "wallets:setup-groups": "node scripts/vespera-setup-groups.mjs"
   },
   "dependencies": {
     "@rainbow-me/rainbowkit": "^2.2.11",
