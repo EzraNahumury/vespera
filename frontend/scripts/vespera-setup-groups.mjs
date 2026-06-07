@@ -140,13 +140,13 @@ function walletFor(account) {
   return createWalletClient({ account, chain: celo, transport });
 }
 
-async function send(label, account, params) {
-  let request;
+async function send(label, account, params, gasLimit = 3_000_000n) {
+  // Simulate to catch reverts early before submitting
   try {
-    ({ request } = await publicClient.simulateContract({
+    await publicClient.simulateContract({
       ...params,
       account: account.address,
-    }));
+    });
   } catch (err) {
     info(`${label}: SKIP — ${err.shortMessage ?? err.message ?? String(err)}`);
     return null;
@@ -160,7 +160,9 @@ async function send(label, account, params) {
   let hash;
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      hash = await walletFor(account).writeContract(request);
+      // Use writeContract directly with explicit gas — simulateContract gas estimate
+      // is unreliable on Celo (returns too low for contract-deploying calls)
+      hash = await walletFor(account).writeContract({ ...params, gas: gasLimit });
       break;
     } catch (err) {
       if (attempt === 3) throw err;
@@ -304,13 +306,13 @@ async function main() {
     info(`\n=== Group ${groupNum}/${groups.length} — ${members.length} member ===`);
     info(`creator: ${short(creator.address)}`);
 
-    // 1. Buat group
+    // 1. Buat group (deploy ArisanGroup — needs high gas)
     await send(`createGroup-${groupNum}`, creator, {
       address: GROUP_REGISTRY,
       abi: GROUP_REGISTRY_ABI,
       functionName: "createGroup",
       args: [DEPOSIT_TOKEN, DEPOSIT_AMOUNT, BigInt(MAX_MEMBERS), ROUND_DURATION, metadataURI],
-    });
+    }, 5_000_000n);
 
     let groupAddress = null;
     if (!DRY_RUN) {
@@ -335,6 +337,7 @@ async function main() {
           `group-${groupNum} invite ${j + 1}/${invited.length} ${short(invitee.address)}`,
           creator,
           { address: groupAddress, abi: GROUP_ABI, functionName: "invite", args: [invitee.address] },
+          300_000n,
         );
       } else {
         info(`group-${groupNum} invite ${short(invitee.address)}: dry-run skip`);
@@ -349,6 +352,7 @@ async function main() {
           `group-${groupNum} join ${j + 1}/${invited.length} ${short(member.address)}`,
           member,
           { address: groupAddress, abi: GROUP_ABI, functionName: "join" },
+          300_000n,
         );
       } else {
         info(`group-${groupNum} join ${short(member.address)}: dry-run skip`);
