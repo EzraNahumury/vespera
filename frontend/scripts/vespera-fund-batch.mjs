@@ -79,6 +79,40 @@ function txUrl(hash) {
   return `${celo.blockExplorers.default.url}/tx/${hash}`;
 }
 
+function batchLabelFromEnv() {
+  return process.env.WALLET_BATCH?.trim() || process.env.WALLET_BATCH_FILE?.trim() || "secret";
+}
+
+function loadWalletBatchSource() {
+  const rawJson = process.env.WALLET_BATCH_JSON ?? process.env.VESPERA_WALLET_BATCH_JSON;
+  if (rawJson?.trim()) {
+    return {
+      source: `secret JSON (${batchLabelFromEnv()})`,
+      wallets: parseWalletBatch(rawJson, "WALLET_BATCH_JSON"),
+    };
+  }
+
+  const base64Json = process.env.WALLET_BATCH_JSON_BASE64 ?? process.env.VESPERA_WALLET_BATCH_JSON_BASE64;
+  if (base64Json?.trim()) {
+    let decoded;
+    try {
+      decoded = Buffer.from(base64Json.trim(), "base64").toString("utf8");
+    } catch (err) {
+      die(`failed to decode WALLET_BATCH_JSON_BASE64: ${err.message}`);
+    }
+    return {
+      source: `base64 secret JSON (${batchLabelFromEnv()})`,
+      wallets: parseWalletBatch(decoded, "WALLET_BATCH_JSON_BASE64"),
+    };
+  }
+
+  const file = batchFileFromEnv();
+  return {
+    source: path.relative(frontendDir, file),
+    wallets: loadWalletBatchFile(file),
+  };
+}
+
 function batchFileFromEnv() {
   const explicit = process.env.WALLET_BATCH_FILE?.trim();
   if (explicit) return resolveWalletFile(explicit);
@@ -103,12 +137,12 @@ function resolveWalletFile(fileName) {
   return resolved;
 }
 
-function loadWalletBatch(file) {
+function parseWalletBatch(raw, source) {
   let parsed;
   try {
-    parsed = JSON.parse(readFileSync(file, "utf8"));
+    parsed = JSON.parse(raw);
   } catch (err) {
-    die(`failed to read ${path.relative(frontendDir, file)}: ${err.message}`);
+    die(`failed to parse ${source}: ${err.message}`);
   }
 
   if (!Array.isArray(parsed.wallets)) die("wallet batch JSON must contain a wallets array.");
@@ -122,6 +156,14 @@ function loadWalletBatch(file) {
       address: wallet.address,
     };
   });
+}
+
+function loadWalletBatchFile(file) {
+  try {
+    return parseWalletBatch(readFileSync(file, "utf8"), path.relative(frontendDir, file));
+  } catch (err) {
+    die(`failed to read ${path.relative(frontendDir, file)}: ${err.message}`);
+  }
 }
 
 function selectWallets(wallets) {
@@ -184,8 +226,7 @@ async function main() {
   if (targetBalance <= minBalance) die("TARGET_BALANCE_CELO must be greater than MIN_BALANCE_CELO.");
   if (maxTopup <= 0n) die("MAX_TOPUP_CELO must be greater than 0.");
 
-  const batchFile = batchFileFromEnv();
-  const wallets = loadWalletBatch(batchFile);
+  const { source, wallets } = loadWalletBatchSource();
   const selected = selectWallets(wallets);
   if (!selected.length) die("selected wallet slice is empty.");
 
@@ -193,7 +234,7 @@ async function main() {
   const walletClient = funder ? createWalletClient({ account: funder, chain: celo, transport }) : null;
 
   info(
-    `${dryRun ? "dry-run" : "live"} funding plan for ${selected.length}/${wallets.length} wallet(s) from ${path.relative(frontendDir, batchFile)}`,
+    `${dryRun ? "dry-run" : "live"} funding plan for ${selected.length}/${wallets.length} wallet(s) from ${source}`,
   );
   if (funder) info(`funder=${short(funder.address)}`);
   info(`min=${formatEther(minBalance)} CELO target=${formatEther(targetBalance)} CELO max-topup=${formatEther(maxTopup)} CELO`);

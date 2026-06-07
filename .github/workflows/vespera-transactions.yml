@@ -65,6 +65,11 @@ on:
         description: "Optional wallet batch to run sequentially, e.g. 01 or batch-01. Empty = use VESPERA_TX_PRIVATE_KEY once."
         required: false
         type: string
+      wallet_batch_secret:
+        description: "Secret name containing the selected wallet batch JSON. Example: VESPERA_WALLET_BATCH_01_JSON."
+        required: false
+        default: "VESPERA_WALLET_BATCH_01_JSON"
+        type: string
       wallet_offset:
         description: "0-based offset inside the selected wallet batch."
         required: false
@@ -136,6 +141,7 @@ jobs:
           MAX_AMOUNT: ${{ github.event_name == 'workflow_dispatch' && inputs.max_amount || vars.VESPERA_MAX_AMOUNT || '' }}
           GROUP_ALLOWLIST: ${{ vars.VESPERA_GROUP_ALLOWLIST || '' }}
           WALLET_BATCH: ${{ github.event_name == 'workflow_dispatch' && inputs.wallet_batch || vars.VESPERA_WALLET_BATCH || '' }}
+          WALLET_BATCH_JSON: ${{ secrets[github.event_name == 'workflow_dispatch' && inputs.wallet_batch_secret || vars.VESPERA_WALLET_BATCH_SECRET || ''] }}
           WALLET_OFFSET: ${{ github.event_name == 'workflow_dispatch' && inputs.wallet_offset || vars.VESPERA_WALLET_OFFSET || '0' }}
           WALLET_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.wallet_limit || vars.VESPERA_WALLET_LIMIT || '10' }}
           MAX_WALLETS_PER_RUN: ${{ vars.VESPERA_MAX_WALLETS_PER_RUN || '25' }}
@@ -147,6 +153,10 @@ jobs:
           REASON_URI: ${{ github.event_name == 'workflow_dispatch' && inputs.reason_uri || vars.VESPERA_REASON_URI || 'ipfs://vespera-automation-request' }}
         run: |
           if [ -n "$WALLET_BATCH" ]; then
+            if [ -z "$WALLET_BATCH_JSON" ]; then
+              echo "::error::Wallet batch secret is empty or missing. Add the JSON as an Actions secret, then set wallet_batch_secret to that secret name."
+              exit 1
+            fi
             npm run tx:vespera:batch
           else
             npm run tx:vespera

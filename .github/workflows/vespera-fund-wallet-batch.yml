@@ -8,6 +8,11 @@ on:
         required: true
         default: "01"
         type: string
+      wallet_batch_secret:
+        description: "Secret name containing the selected wallet batch JSON."
+        required: true
+        default: "VESPERA_WALLET_BATCH_01_JSON"
+        type: string
       wallet_offset:
         description: "0-based offset inside the selected wallet batch."
         required: false
@@ -79,6 +84,7 @@ jobs:
           FUNDER_PRIVATE_KEY: ${{ secrets.VESPERA_FUNDER_PRIVATE_KEY }}
           RPC_URL: ${{ secrets.CELO_RPC_URL || vars.CELO_RPC_URL || 'https://forno.celo.org' }}
           WALLET_BATCH: ${{ inputs.wallet_batch }}
+          WALLET_BATCH_JSON: ${{ secrets[inputs.wallet_batch_secret] }}
           WALLET_OFFSET: ${{ inputs.wallet_offset }}
           WALLET_LIMIT: ${{ inputs.wallet_limit }}
           MAX_WALLETS_PER_RUN: ${{ vars.VESPERA_MAX_WALLETS_PER_RUN || '25' }}
@@ -88,6 +94,10 @@ jobs:
           DRY_RUN: ${{ format('{0}', inputs.dry_run) }}
           CONFIRM_MAINNET: ${{ format('{0}', inputs.confirm_mainnet) }}
         run: |
+          if [ -z "$WALLET_BATCH_JSON" ]; then
+            echo "::error::Wallet batch secret is empty or missing. Add the JSON as an Actions secret, then set wallet_batch_secret to that secret name."
+            exit 1
+          fi
           if [ "$DRY_RUN" = "false" ] && [ -z "$FUNDER_PRIVATE_KEY" ]; then
             echo "::error::VESPERA_FUNDER_PRIVATE_KEY secret is required for live funding."
             exit 1
