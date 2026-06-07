@@ -476,6 +476,7 @@ async function deposit(group) {
       functionName: "approve",
       args: [CONTRACTS.treasury, MAX_UINT256],
     });
+    if (!dryRun) await new Promise((r) => setTimeout(r, 2_000));
   }
 
   await sendContract(`deposit round ${currentRound} for ${short(group)}`, {
@@ -616,15 +617,27 @@ async function autoGroup(group) {
         address: CONTRACTS.treasury, abi: TREASURY_ABI, functionName: "balanceOf", args: [group, token],
       });
       if (balance > 0n) {
-        await sendContract(`request withdrawal ${short(group)}`, {
-          address: group,
-          abi: ARISAN_GROUP_ABI,
-          functionName: "requestWithdrawal",
-          args: [balance, "ipfs://vespera-stress-test"],
-        });
-        activeRequestId = await publicClient.readContract({
-          address: group, abi: ARISAN_GROUP_ABI, functionName: "activeRequestId",
-        });
+        // Simulate first to get the requestId that will be assigned (contract sets activeRequestId only on initVote, not requestWithdrawal)
+        let newRequestId = 0n;
+        try {
+          const { result } = await publicClient.simulateContract({
+            address: group, abi: ARISAN_GROUP_ABI, functionName: "requestWithdrawal",
+            args: [balance, "ipfs://vespera-stress-test"], account: signerAddress,
+          });
+          newRequestId = result ?? 0n;
+        } catch (err) {
+          info(`request withdrawal ${short(group)}: skipped (${err.shortMessage ?? err.message ?? String(err)})`);
+        }
+        if (newRequestId > 0n) {
+          await sendContract(`request withdrawal ${short(group)}`, {
+            address: group,
+            abi: ARISAN_GROUP_ABI,
+            functionName: "requestWithdrawal",
+            args: [balance, "ipfs://vespera-stress-test"],
+          });
+          if (!dryRun && autoInitVote) await initVote(group, newRequestId);
+        }
+        return;
       }
     }
   }
