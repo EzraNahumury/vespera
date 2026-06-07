@@ -332,7 +332,16 @@ async function sendContract(label, params) {
   }
 
   if (!walletClient) die(`${label} needs PRIVATE_KEY when DRY_RUN=0.`);
-  const hash = await walletClient.writeContract(request);
+
+  let gasEstimate;
+  try {
+    gasEstimate = await publicClient.estimateContractGas({ ...params, account: signerAddress });
+    gasEstimate = (gasEstimate * 120n) / 100n;
+  } catch {
+    gasEstimate = 500_000n;
+  }
+
+  const hash = await walletClient.writeContract({ ...request, gas: gasEstimate });
   info(`${label}: submitted ${txUrl(hash)}`);
   await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
   info(`${label}: confirmed`);
