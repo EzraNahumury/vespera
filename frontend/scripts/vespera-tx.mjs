@@ -1,29 +1,14 @@
 import {
   createPublicClient,
   createWalletClient,
-  defineChain,
   fallback,
   formatUnits,
   http,
   isAddress,
   parseUnits,
 } from "viem";
+import { celo } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
-
-const celo = defineChain({
-  id: 42220,
-  name: "Celo",
-  nativeCurrency: { name: "CELO", symbol: "CELO", decimals: 18 },
-  rpcUrls: {
-    default: {
-      http: [
-        process.env.RPC_URL ?? process.env.NEXT_PUBLIC_RPC_URL ?? "https://forno.celo.org",
-        "https://rpc.ankr.com/celo",
-      ],
-    },
-  },
-  blockExplorers: { default: { name: "Celoscan", url: "https://celoscan.io" } },
-});
 
 const CONTRACTS = {
   agentRegistry:
@@ -249,8 +234,12 @@ const groupAllowlist = (process.env.GROUP_ALLOWLIST ?? "")
   .filter(Boolean);
 const maxAmountHuman = (process.env.MAX_AMOUNT ?? "").trim(); // "" = no cap
 
+const rpcUrls = [
+  process.env.RPC_URL ?? process.env.NEXT_PUBLIC_RPC_URL ?? "https://forno.celo.org",
+  "https://rpc.ankr.com/celo",
+].filter(Boolean);
 const transport = fallback(
-  celo.rpcUrls.default.http.filter(Boolean).map((url) => http(url, { timeout: 30_000 })),
+  rpcUrls.map((url) => http(url, { timeout: 30_000 })),
   { rank: false, retryCount: 2, retryDelay: 500 },
 );
 
