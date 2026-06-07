@@ -29,6 +29,7 @@ import {
   createWalletClient,
   fallback,
   formatEther,
+  formatGwei,
   http,
   parseEther,
 } from "viem";
@@ -140,7 +141,7 @@ function walletFor(account) {
   return createWalletClient({ account, chain: celo, transport });
 }
 
-async function send(label, account, params, gasLimit = 3_000_000n) {
+async function send(label, account, params) {
   // Simulate to catch reverts early before submitting
   try {
     await publicClient.simulateContract({
@@ -157,12 +158,35 @@ async function send(label, account, params, gasLimit = 3_000_000n) {
     return null;
   }
 
+  // eth_estimateGas (via writeContract internal) under-estimates on Celo for
+  // calls that deploy contracts internally. Use estimateContractGas instead.
+  let gasEstimate;
+  try {
+    gasEstimate = await publicClient.estimateContractGas({
+      ...params,
+      account: account.address,
+    });
+    gasEstimate = gasEstimate * 120n / 100n; // 20% buffer
+  } catch (err) {
+    info(`${label}: gas estimation failed, using 3M fallback — ${err.shortMessage ?? err.message}`);
+    gasEstimate = 3_000_000n;
+  }
+
+  // Guard: check balance is enough for gas + tip before submitting
+  const [fees, balance] = await Promise.all([
+    publicClient.estimateFeesPerGas(),
+    publicClient.getBalance({ address: account.address }),
+  ]);
+  const gasCost = gasEstimate * fees.maxFeePerGas;
+  if (balance < gasCost) {
+    info(`${label}: SKIP — insufficient balance ${formatEther(balance)} CELO, need ~${formatEther(gasCost)} CELO for gas (maxFeePerGas=${formatGwei(fees.maxFeePerGas)} Gwei)`);
+    return null;
+  }
+
   let hash;
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      // Use writeContract directly with explicit gas — simulateContract gas estimate
-      // is unreliable on Celo (returns too low for contract-deploying calls)
-      hash = await walletFor(account).writeContract({ ...params, gas: gasLimit });
+      hash = await walletFor(account).writeContract({ ...params, gas: gasEstimate });
       break;
     } catch (err) {
       if (attempt === 3) throw err;
@@ -306,13 +330,13 @@ async function main() {
     info(`\n=== Group ${groupNum}/${groups.length} — ${members.length} member ===`);
     info(`creator: ${short(creator.address)}`);
 
-    // 1. Buat group (deploy ArisanGroup — needs high gas)
+    // 1. Buat group
     await send(`createGroup-${groupNum}`, creator, {
       address: GROUP_REGISTRY,
       abi: GROUP_REGISTRY_ABI,
       functionName: "createGroup",
       args: [DEPOSIT_TOKEN, DEPOSIT_AMOUNT, BigInt(MAX_MEMBERS), ROUND_DURATION, metadataURI],
-    }, 5_000_000n);
+    });
 
     let groupAddress = null;
     if (!DRY_RUN) {
@@ -337,7 +361,6 @@ async function main() {
           `group-${groupNum} invite ${j + 1}/${invited.length} ${short(invitee.address)}`,
           creator,
           { address: groupAddress, abi: GROUP_ABI, functionName: "invite", args: [invitee.address] },
-          300_000n,
         );
       } else {
         info(`group-${groupNum} invite ${short(invitee.address)}: dry-run skip`);
@@ -352,7 +375,6 @@ async function main() {
           `group-${groupNum} join ${j + 1}/${invited.length} ${short(member.address)}`,
           member,
           { address: groupAddress, abi: GROUP_ABI, functionName: "join" },
-          300_000n,
         );
       } else {
         info(`group-${groupNum} join ${short(member.address)}: dry-run skip`);
