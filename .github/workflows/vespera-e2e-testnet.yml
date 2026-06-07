@@ -1,0 +1,97 @@
+name: Vespera E2E (Alfajores testnet)
+
+# Functional verification ONLY. Deploys a FRESH instance of the Vespera contracts to Celo
+# Alfajores (testnet, chainId 44787), then runs one full arisan lifecycle with throwaway
+# faucet-funded wallets to prove the protocol + transaction automation work end to end.
+#
+# This never touches mainnet. It is manual-trigger only (no schedule) so it can't run by itself.
+#
+# One-time setup (see frontend/scripts/README-e2e-testnet.md):
+#   1. Create a fresh wallet, fund it with test CELO at https://faucet.celo.org
+#   2. Add its private key as repo secret  ALFAJORES_FUNDER_KEY  (TESTNET key only — never mainnet)
+
+on:
+  workflow_dispatch:
+    inputs:
+      members:
+        description: "Group size (5-15)."
+        required: false
+        default: "5"
+        type: string
+      deposit_celo:
+        description: "Per-round deposit in CELO."
+        required: false
+        default: "0.02"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vespera-e2e-testnet
+  cancel-in-progress: false
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      RPC_URL: https://alfajores-forno.celo-testnet.org
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Guard - funder secret must be set
+        run: |
+          if [ -z "${{ secrets.ALFAJORES_FUNDER_KEY }}" ]; then
+            echo "::error::ALFAJORES_FUNDER_KEY secret is not set. See frontend/scripts/README-e2e-testnet.md"
+            exit 1
+          fi
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Deploy fresh protocol to Alfajores
+        working-directory: vespera-sc
+        env:
+          PRIVATE_KEY: ${{ secrets.ALFAJORES_FUNDER_KEY }}
+        run: |
+          forge script script/Deploy.s.sol:Deploy \
+            --rpc-url "$RPC_URL" --broadcast --skip-simulation -vvv | tee deploy.out
+
+          pick() { grep "$1" deploy.out | grep -oiE '0x[0-9a-f]{40}' | tail -1; }
+          {
+            echo "GROUP_REGISTRY_ADDRESS=$(pick 'GroupRegistry:')"
+            echo "VOTING_ENGINE_ADDRESS=$(pick 'VotingEngine:')"
+            echo "TREASURY_ADDRESS=$(pick 'Treasury:')"
+            echo "AGENT_REGISTRY_ADDRESS=$(pick 'AgentRegistry:')"
+          } >> "$GITHUB_ENV"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run E2E lifecycle
+        working-directory: frontend
+        env:
+          ALFAJORES_FUNDER_KEY: ${{ secrets.ALFAJORES_FUNDER_KEY }}
+          MEMBERS: ${{ inputs.members }}
+          DEPOSIT_CELO: ${{ inputs.deposit_celo }}
+          WALLETS_OUT: e2e-wallets.json
+        run: node scripts/vespera-e2e-testnet.mjs
+
+      - name: Upload generated test wallets
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-wallets
+          path: frontend/e2e-wallets.json
+          if-no-files-found: ignore
