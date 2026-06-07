@@ -27,12 +27,12 @@
 import {
   createPublicClient,
   createWalletClient,
-  defineChain,
   fallback,
   formatEther,
   http,
   parseEther,
 } from "viem";
+import { celo } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import { writeFileSync, mkdirSync, existsSync } from "node:fs";
 import path from "node:path";
@@ -46,23 +46,13 @@ const CELO_MAINNET_ID = 42220;
 const CELO_TOKEN_MAINNET = "0x471EcE3750Da237f93B8E339c536989b8978a438";
 const GROUP_REGISTRY = "0x493613949d63b63b02A58Ee899e9c6cd647Ae86b";
 
-const celo = defineChain({
-  id: CELO_MAINNET_ID,
-  name: "Celo",
-  nativeCurrency: { name: "CELO", symbol: "CELO", decimals: 18 },
-  rpcUrls: {
-    default: {
-      http: [
-        process.env.RPC_URL ?? "https://forno.celo.org",
-        "https://rpc.ankr.com/celo",
-      ],
-    },
-  },
-  blockExplorers: { default: { name: "Celoscan", url: "https://celoscan.io" } },
-});
+const rpcUrls = [
+  process.env.RPC_URL ?? "https://forno.celo.org",
+  "https://rpc.ankr.com/celo",
+].filter(Boolean);
 
 const transport = fallback(
-  celo.rpcUrls.default.http.map((url) => http(url, { timeout: 30_000 })),
+  rpcUrls.map((url) => http(url, { timeout: 30_000 })),
   { rank: false, retryCount: 3, retryDelay: 1_000 },
 );
 const publicClient = createPublicClient({ chain: celo, transport });
