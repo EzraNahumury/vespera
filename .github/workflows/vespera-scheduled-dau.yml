@@ -1,0 +1,89 @@
+name: Vespera MAINNET - scheduled DAU batches
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Override dry-run for this manual run."
+        required: true
+        default: true
+        type: boolean
+      start_date:
+        description: "Asia/Jakarta start date. Batch 01 runs on the first active day."
+        required: false
+        default: "2026-06-08"
+        type: string
+      end_date:
+        description: "Asia/Jakarta end date, inclusive."
+        required: false
+        default: "2026-06-22"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vespera-scheduled-dau
+  cancel-in-progress: false
+
+jobs:
+  dau:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run scheduled DAU batch slice
+        env:
+          RPC_URL: ${{ secrets.CELO_RPC_URL || vars.CELO_RPC_URL || 'https://forno.celo.org' }}
+
+          # Keep scheduled mainnet dry-run by default. To enable live scheduled DAU:
+          #   VESPERA_DAU_DRY_RUN=false
+          #   VESPERA_DAU_CONFIRM_MAINNET=true
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && format('{0}', inputs.dry_run) || vars.VESPERA_DAU_DRY_RUN || '1' }}
+          CONFIRM_MAINNET: ${{ vars.VESPERA_DAU_CONFIRM_MAINNET || '0' }}
+
+          DAU_START_DATE: ${{ github.event_name == 'workflow_dispatch' && inputs.start_date || vars.VESPERA_DAU_START_DATE || '2026-06-08' }}
+          DAU_END_DATE: ${{ github.event_name == 'workflow_dispatch' && inputs.end_date || vars.VESPERA_DAU_END_DATE || '2026-06-22' }}
+          DAU_SLOT_MINUTES: ${{ vars.VESPERA_DAU_SLOT_MINUTES || '15' }}
+          DAU_BATCHES: ${{ vars.VESPERA_DAU_BATCHES || '01,02,03,04,05' }}
+          DAU_RANDOM_SEED: ${{ vars.VESPERA_DAU_RANDOM_SEED || 'vespera-mainnet-dau' }}
+
+          # DAU transaction behavior. "deposit" gives each selected wallet a real transaction
+          # when it is a member, funded, approved, and has not deposited this round.
+          ACTION: ${{ vars.VESPERA_DAU_ACTION || 'deposit' }}
+          GROUP_ADDRESS: ${{ vars.VESPERA_DAU_GROUP_ADDRESS || vars.VESPERA_GROUP_ADDRESS || '' }}
+          GROUP_ALLOWLIST: ${{ vars.VESPERA_GROUP_ALLOWLIST || '' }}
+          MAX_AMOUNT: ${{ vars.VESPERA_MAX_AMOUNT || '' }}
+          MAX_GROUPS: "1"
+          AUTO_DEPOSIT: ${{ vars.VESPERA_DAU_AUTO_DEPOSIT || '0' }}
+          AUTO_INIT_VOTE: ${{ vars.VESPERA_AUTO_INIT_VOTE || '1' }}
+          AUTO_CAST_VOTE: ${{ vars.VESPERA_AUTO_CAST_VOTE || '1' }}
+          AUTO_FINALIZE: ${{ vars.VESPERA_AUTO_FINALIZE || '1' }}
+          CONTINUE_ON_ERROR: ${{ vars.VESPERA_DAU_CONTINUE_ON_ERROR || '1' }}
+          MAX_WALLETS_PER_RUN: ${{ vars.VESPERA_DAU_MAX_WALLETS_PER_RUN || '10' }}
+
+          WALLET_BATCH_01_JSON: ${{ secrets.VESPERA_WALLET_BATCH_01_JSON }}
+          WALLET_BATCH_02_JSON: ${{ secrets.VESPERA_WALLET_BATCH_02_JSON }}
+          WALLET_BATCH_03_JSON: ${{ secrets.VESPERA_WALLET_BATCH_03_JSON }}
+          WALLET_BATCH_04_JSON: ${{ secrets.VESPERA_WALLET_BATCH_04_JSON }}
+          WALLET_BATCH_05_JSON: ${{ secrets.VESPERA_WALLET_BATCH_05_JSON }}
+        run: npm run tx:vespera:scheduled-dau
