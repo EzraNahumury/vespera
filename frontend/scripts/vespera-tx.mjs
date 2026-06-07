@@ -96,6 +96,19 @@ const ARISAN_GROUP_ABI = [
   },
 ];
 
+const TREASURY_ABI = [
+  {
+    type: "function",
+    name: "balanceOf",
+    inputs: [
+      { name: "group", type: "address" },
+      { name: "token", type: "address" },
+    ],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+];
+
 const VOTING_ENGINE_ABI = [
   { type: "function", name: "AGENT_ROLE", inputs: [], outputs: [{ name: "", type: "bytes32" }], stateMutability: "view" },
   {
@@ -217,6 +230,7 @@ const ERC20_ABI = [
 const action = (process.env.ACTION ?? "auto").toLowerCase();
 const dryRun = readBool("DRY_RUN", true);
 const autoDeposit = readBool("AUTO_DEPOSIT", false);
+const autoRequestWithdrawal = readBool("AUTO_REQUEST_WITHDRAWAL", false);
 const autoInitVote = readBool("AUTO_INIT_VOTE", true);
 const autoCastVote = readBool("AUTO_CAST_VOTE", true);
 const autoFinalize = readBool("AUTO_FINALIZE", true);
@@ -248,6 +262,18 @@ const account = loadAccount();
 const signerAddress = account?.address ?? normalizeAddress(process.env.SIGNER_ADDRESS, "SIGNER_ADDRESS", !dryRun);
 const walletClient = account
   ? createWalletClient({ account, chain: celo, transport })
+  : null;
+
+function loadAgentAccount() {
+  const pk = process.env.AGENT_PRIVATE_KEY;
+  if (!pk) return null;
+  const hex = pk.startsWith("0x") ? pk : `0x${pk}`;
+  if (!/^0x[0-9a-fA-F]{64}$/.test(hex)) die("AGENT_PRIVATE_KEY must be a 32-byte hex string.");
+  return privateKeyToAccount(hex);
+}
+const agentAccount = loadAgentAccount();
+const agentWalletClient = agentAccount
+  ? createWalletClient({ account: agentAccount, chain: celo, transport })
   : null;
 
 function readBool(name, fallbackValue) {
@@ -301,11 +327,11 @@ async function readTokenMeta(token) {
   return { symbol, decimals: Number(decimals) };
 }
 
-async function sendContract(label, params) {
-  if (!signerAddress) die(`${label} needs PRIVATE_KEY or SIGNER_ADDRESS.`);
+async function sendContractWith(label, params, txClient, txSigner) {
+  if (!txSigner) die(`${label} needs a signer.`);
 
   try {
-    await publicClient.simulateContract({ ...params, account: signerAddress });
+    await publicClient.simulateContract({ ...params, account: txSigner });
   } catch (err) {
     info(`${label}: skipped (${err.shortMessage ?? err.message ?? String(err)})`);
     return null;
@@ -316,11 +342,11 @@ async function sendContract(label, params) {
     return null;
   }
 
-  if (!walletClient) die(`${label} needs PRIVATE_KEY when DRY_RUN=0.`);
+  if (!txClient) die(`${label} needs PRIVATE_KEY when DRY_RUN=0.`);
 
   let gasEstimate;
   try {
-    gasEstimate = await publicClient.estimateContractGas({ ...params, account: signerAddress });
+    gasEstimate = await publicClient.estimateContractGas({ ...params, account: txSigner });
     gasEstimate = (gasEstimate * 120n) / 100n;
   } catch {
     gasEstimate = 500_000n;
@@ -329,7 +355,7 @@ async function sendContract(label, params) {
   let hash;
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      hash = await walletClient.writeContract({ ...params, gas: gasEstimate });
+      hash = await txClient.writeContract({ ...params, gas: gasEstimate });
       break;
     } catch (err) {
       if (attempt === 3) throw err;
@@ -341,6 +367,11 @@ async function sendContract(label, params) {
   await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
   info(`${label}: confirmed`);
   return hash;
+}
+
+async function sendContract(label, params) {
+  if (!signerAddress) die(`${label} needs PRIVATE_KEY or SIGNER_ADDRESS.`);
+  return sendContractWith(label, params, walletClient, signerAddress);
 }
 
 async function selectedGroups() {
@@ -471,31 +502,38 @@ async function requestWithdrawal(group) {
 }
 
 async function initVote(group, requestId) {
+  const effectiveAgent = agentAccount ?? (signerAddress ? account : null);
+  const effectiveAgentAddress = agentAccount?.address ?? signerAddress;
+  const effectiveClient = agentWalletClient ?? walletClient;
+
+  if (!effectiveAgentAddress) {
+    info(`initVote ${short(group)} #${requestId}: skipped (no agent or signer)`);
+    return;
+  }
+
   const role = await publicClient.readContract({
     address: CONTRACTS.votingEngine,
     abi: VOTING_ENGINE_ABI,
     functionName: "AGENT_ROLE",
   });
-  const hasAgentRole = signerAddress
-    ? await publicClient.readContract({
-        address: CONTRACTS.votingEngine,
-        abi: VOTING_ENGINE_ABI,
-        functionName: "hasRole",
-        args: [role, signerAddress],
-      })
-    : false;
+  const hasAgentRole = await publicClient.readContract({
+    address: CONTRACTS.votingEngine,
+    abi: VOTING_ENGINE_ABI,
+    functionName: "hasRole",
+    args: [role, effectiveAgentAddress],
+  });
   if (!hasAgentRole) {
-    info(`initVote ${short(group)} #${requestId}: skipped (signer lacks AGENT_ROLE)`);
+    info(`initVote ${short(group)} #${requestId}: skipped (${short(effectiveAgentAddress)} lacks AGENT_ROLE)`);
     return;
   }
   if (!(await amountWithinCap("initVote", group, requestId))) return;
 
-  await sendContract(`init vote ${short(group)} #${requestId}`, {
+  await sendContractWith(`init vote ${short(group)} #${requestId}`, {
     address: CONTRACTS.votingEngine,
     abi: VOTING_ENGINE_ABI,
     functionName: "initVote",
     args: [group, requestId, confidenceBps],
-  });
+  }, effectiveClient, effectiveAgentAddress);
 }
 
 async function castVote(group, requestId) {
@@ -558,15 +596,39 @@ async function configureAgent() {
 
 async function autoGroup(group) {
   await assertRegistered(group);
-  info(`checking group ${group}`);
+  info(`checking group ${short(group)}`);
 
   if (autoDeposit) await deposit(group);
 
-  const activeRequestId = await publicClient.readContract({
+  let activeRequestId = await publicClient.readContract({
     address: group,
     abi: ARISAN_GROUP_ABI,
     functionName: "activeRequestId",
   });
+
+  if (activeRequestId === 0n && autoRequestWithdrawal && signerAddress) {
+    const isMem = await publicClient.readContract({
+      address: group, abi: ARISAN_GROUP_ABI, functionName: "isMember", args: [signerAddress],
+    });
+    if (isMem) {
+      const token = await publicClient.readContract({ address: group, abi: ARISAN_GROUP_ABI, functionName: "depositToken" });
+      const balance = await publicClient.readContract({
+        address: CONTRACTS.treasury, abi: TREASURY_ABI, functionName: "balanceOf", args: [group, token],
+      });
+      if (balance > 0n) {
+        await sendContract(`request withdrawal ${short(group)}`, {
+          address: group,
+          abi: ARISAN_GROUP_ABI,
+          functionName: "requestWithdrawal",
+          args: [balance, "ipfs://vespera-stress-test"],
+        });
+        activeRequestId = await publicClient.readContract({
+          address: group, abi: ARISAN_GROUP_ABI, functionName: "activeRequestId",
+        });
+      }
+    }
+  }
+
   if (activeRequestId === 0n) {
     info(`group ${short(group)}: no active request`);
     return;
@@ -634,7 +696,24 @@ async function main() {
   const requestId = process.env.REQUEST_ID ? BigInt(process.env.REQUEST_ID) : undefined;
 
   if (action === "auto") {
-    for (const g of groups) await autoGroup(g);
+    if (!process.env.GROUP_ADDRESS && groups.length > 1 && signerAddress) {
+      const checks = await Promise.all(
+        groups.map((g) =>
+          publicClient
+            .readContract({ address: g, abi: ARISAN_GROUP_ABI, functionName: "isMember", args: [signerAddress] })
+            .then((isMember) => ({ g, isMember }))
+            .catch(() => ({ g, isMember: false })),
+        ),
+      );
+      const found = checks.find(({ isMember }) => isMember);
+      if (!found) {
+        info(`auto: signer ${signerAddress} is not a member of any group in allowlist`);
+        return;
+      }
+      await autoGroup(found.g);
+    } else {
+      for (const g of groups) await autoGroup(g);
+    }
     return;
   }
   if (action === "deposit") return deposit(group);

@@ -69,15 +69,17 @@ jobs:
 
           # DAU transaction behavior. "deposit" gives each selected wallet a real transaction
           # when it is a member, funded, approved, and has not deposited this round.
-          ACTION: ${{ vars.VESPERA_DAU_ACTION || 'deposit' }}
+          ACTION: ${{ vars.VESPERA_DAU_ACTION || 'auto' }}
           GROUP_ADDRESS: ${{ vars.VESPERA_DAU_GROUP_ADDRESS || vars.VESPERA_GROUP_ADDRESS || '' }}
           GROUP_ALLOWLIST: ${{ vars.VESPERA_GROUP_ALLOWLIST || '' }}
           MAX_AMOUNT: ${{ vars.VESPERA_MAX_AMOUNT || '' }}
           MAX_GROUPS: "50"
-          AUTO_DEPOSIT: ${{ vars.VESPERA_DAU_AUTO_DEPOSIT || '0' }}
+          AUTO_DEPOSIT: ${{ vars.VESPERA_DAU_AUTO_DEPOSIT || '1' }}
+          AUTO_REQUEST_WITHDRAWAL: ${{ vars.VESPERA_AUTO_REQUEST_WITHDRAWAL || '1' }}
           AUTO_INIT_VOTE: ${{ vars.VESPERA_AUTO_INIT_VOTE || '1' }}
           AUTO_CAST_VOTE: ${{ vars.VESPERA_AUTO_CAST_VOTE || '1' }}
           AUTO_FINALIZE: ${{ vars.VESPERA_AUTO_FINALIZE || '1' }}
+          AGENT_PRIVATE_KEY: ${{ secrets.VESPERA_AGENT_PRIVATE_KEY }}
           CONTINUE_ON_ERROR: ${{ vars.VESPERA_DAU_CONTINUE_ON_ERROR || '1' }}
           MAX_WALLETS_PER_RUN: ${{ vars.VESPERA_DAU_MAX_WALLETS_PER_RUN || '10' }}
 
