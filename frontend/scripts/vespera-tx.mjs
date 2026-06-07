@@ -605,7 +605,7 @@ async function main() {
     return;
   }
 
-  const group = normalizeAddress(process.env.GROUP_ADDRESS ?? groups[0], "GROUP_ADDRESS");
+  const group = normalizeAddress(process.env.GROUP_ADDRESS || groups[0], "GROUP_ADDRESS");
   const requestId = process.env.REQUEST_ID ? BigInt(process.env.REQUEST_ID) : undefined;
 
   if (action === "auto") {
