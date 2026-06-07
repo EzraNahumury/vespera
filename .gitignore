@@ -8,6 +8,10 @@ node_modules/
 .env.local
 .env.*.local
 
+# Local generated testnet wallets with private keys
+frontend/testnet-wallets/
+frontend/e2e-wallets.json
+
 # Build outputs
 dist/
 build/
