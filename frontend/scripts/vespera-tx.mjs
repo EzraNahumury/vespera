@@ -239,6 +239,16 @@ const voteSupport = readBool("VOTE_SUPPORT", true);
 const confidenceBps = Number(process.env.CONFIDENCE_BPS ?? "8500");
 const maxGroups = Math.max(1, Number(process.env.MAX_GROUPS ?? "10"));
 
+// --- Money guardrails for live mainnet runs ---
+// GROUP_ALLOWLIST: comma-separated addresses. When set, only these groups are ever touched.
+// MAX_AMOUNT: human token units. When set, any request whose amount exceeds it is skipped
+//   (applies to initVote / castVote / finalize — the actions that can move escrowed funds).
+const groupAllowlist = (process.env.GROUP_ALLOWLIST ?? "")
+  .split(",")
+  .map((s) => s.trim().toLowerCase())
+  .filter(Boolean);
+const maxAmountHuman = (process.env.MAX_AMOUNT ?? "").trim(); // "" = no cap
+
 const transport = fallback(
   celo.rpcUrls.default.http.filter(Boolean).map((url) => http(url, { timeout: 30_000 })),
   { rank: false, retryCount: 2, retryDelay: 500 },
@@ -324,14 +334,44 @@ async function sendContract(label, params) {
 
 async function selectedGroups() {
   const explicit = process.env.GROUP_ADDRESS;
-  if (explicit) return [normalizeAddress(explicit, "GROUP_ADDRESS")];
+  if (explicit) {
+    const addr = normalizeAddress(explicit, "GROUP_ADDRESS");
+    if (groupAllowlist.length && !groupAllowlist.includes(addr.toLowerCase())) {
+      die(`GROUP_ADDRESS ${addr} is not in GROUP_ALLOWLIST.`);
+    }
+    return [addr];
+  }
 
   const groups = await publicClient.readContract({
     address: CONTRACTS.groupRegistry,
     abi: GROUP_REGISTRY_ABI,
     functionName: "allGroups",
   });
-  return groups.slice(0, maxGroups);
+  const filtered = groupAllowlist.length
+    ? groups.filter((g) => groupAllowlist.includes(g.toLowerCase()))
+    : groups;
+  return filtered.slice(0, maxGroups);
+}
+
+// Returns true when the request amount is within MAX_AMOUNT (or no cap is set). Logs and
+// returns false when it exceeds the cap, so money actions can be skipped safely.
+async function amountWithinCap(label, group, requestId) {
+  if (!maxAmountHuman) return true;
+  const [, amount, token] = await publicClient.readContract({
+    address: group,
+    abi: ARISAN_GROUP_ABI,
+    functionName: "getRequest",
+    args: [requestId],
+  });
+  const meta = await readTokenMeta(token);
+  const cap = parseUnits(maxAmountHuman, meta.decimals);
+  if (amount > cap) {
+    info(
+      `${label} ${short(group)} #${requestId}: skipped (amount ${formatUnits(amount, meta.decimals)} ${meta.symbol} exceeds MAX_AMOUNT ${maxAmountHuman})`,
+    );
+    return false;
+  }
+  return true;
 }
 
 async function assertRegistered(group) {
@@ -437,6 +477,7 @@ async function initVote(group, requestId) {
     info(`initVote ${short(group)} #${requestId}: skipped (signer lacks AGENT_ROLE)`);
     return;
   }
+  if (!(await amountWithinCap("initVote", group, requestId))) return;
 
   await sendContract(`init vote ${short(group)} #${requestId}`, {
     address: CONTRACTS.votingEngine,
@@ -472,6 +513,7 @@ async function castVote(group, requestId) {
     info(`castVote ${short(group)} #${requestId}: skipped (already voted)`);
     return;
   }
+  if (!(await amountWithinCap("castVote", group, requestId))) return;
 
   await sendContract(`cast ${voteSupport ? "for" : "against"} vote ${short(group)} #${requestId}`, {
     address: CONTRACTS.votingEngine,
@@ -482,6 +524,8 @@ async function castVote(group, requestId) {
 }
 
 async function finalize(group, requestId) {
+  if (!(await amountWithinCap("finalize", group, requestId))) return;
+
   await sendContract(`finalize vote ${short(group)} #${requestId}`, {
     address: CONTRACTS.votingEngine,
     abi: VOTING_ENGINE_ABI,
@@ -536,6 +580,12 @@ async function main() {
 
   info(`${dryRun ? "dry-run" : "live"} mode on ${celo.name}`);
   info(`action=${action}${signerAddress ? ` signer=${signerAddress}` : ""}`);
+  info(
+    `guardrails: allowlist=${groupAllowlist.length ? `${groupAllowlist.length} group(s)` : "off (all groups)"}, max-amount=${maxAmountHuman || "off (uncapped)"}`,
+  );
+  if (!dryRun && !maxAmountHuman) {
+    info("WARNING: live mode with no MAX_AMOUNT cap — withdrawals of any size can be actioned.");
+  }
 
   if (!dryRun && !walletClient) die("DRY_RUN=0 requires PRIVATE_KEY.");
 
