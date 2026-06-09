@@ -4,13 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: "auto, deposit, request-withdrawal, init-vote, cast-vote, finalize, configure-agent"
+        description: "auto, deposit, self-transfer, request-withdrawal, init-vote, cast-vote, finalize, configure-agent"
         required: true
         default: "auto"
         type: choice
         options:
           - auto
           - deposit
+          - self-transfer
           - request-withdrawal
           - init-vote
           - cast-vote

@@ -5,6 +5,7 @@ import {
   formatUnits,
   http,
   isAddress,
+  parseEther,
   parseUnits,
 } from "viem";
 import { celo } from "viem/chains";
@@ -377,6 +378,51 @@ async function sendContract(label, params) {
   return sendContractWith(label, params, walletClient, signerAddress);
 }
 
+async function selfTransfer() {
+  if (!signerAddress) die("self-transfer needs PRIVATE_KEY or SIGNER_ADDRESS.");
+  const value = parseEther(process.env.SELF_TRANSFER_CELO ?? "0");
+  const label = `self-transfer ${formatUnits(value, 18)} CELO for ${short(signerAddress)}`;
+
+  let gas;
+  try {
+    gas = await publicClient.estimateGas({
+      account: signerAddress,
+      to: signerAddress,
+      value,
+    });
+  } catch (err) {
+    info(`${label}: skipped (${err.shortMessage ?? err.message ?? String(err)})`);
+    return null;
+  }
+
+  const [balance, gasPrice] = await Promise.all([
+    publicClient.getBalance({ address: signerAddress }),
+    publicClient.getGasPrice(),
+  ]);
+  const needed = value + gas * gasPrice;
+  if (balance < needed) {
+    info(
+      `${label}: skipped (balance ${formatUnits(balance, 18)} CELO, estimated need ${formatUnits(needed, 18)} CELO including gas)`,
+    );
+    return null;
+  }
+
+  if (dryRun) {
+    info(`${label}: dry-run simulation ok (estimated gas ${gas})`);
+    return null;
+  }
+
+  if (!walletClient) die("self-transfer needs PRIVATE_KEY when DRY_RUN=0.");
+  const hash = await walletClient.sendTransaction({
+    to: signerAddress,
+    value,
+  });
+  info(`${label}: submitted ${txUrl(hash)}`);
+  await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
+  info(`${label}: confirmed`);
+  return hash;
+}
+
 async function selectedGroups() {
   const explicit = process.env.GROUP_ADDRESS;
   if (explicit) {
@@ -680,6 +726,7 @@ async function main() {
   if (!dryRun && !walletClient) die("DRY_RUN=0 requires PRIVATE_KEY.");
 
   if (action === "configure-agent") return configureAgent();
+  if (action === "self-transfer" || action === "dau-ping") return selfTransfer();
 
   const groups = await selectedGroups();
   if (groups.length === 0) {

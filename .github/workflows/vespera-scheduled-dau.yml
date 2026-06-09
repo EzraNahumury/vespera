@@ -67,9 +67,9 @@ jobs:
           DAU_BATCHES: ${{ vars.VESPERA_DAU_BATCHES || '01,02,03,04,05' }}
           DAU_RANDOM_SEED: ${{ vars.VESPERA_DAU_RANDOM_SEED || 'vespera-mainnet-dau' }}
 
-          # DAU transaction behavior. "deposit" gives each selected wallet a real transaction
-          # when it is a member, funded, approved, and has not deposited this round.
-          ACTION: ${{ vars.VESPERA_DAU_ACTION || 'auto' }}
+          # DAU transaction behavior. "self-transfer" creates a wallet-originated tx
+          # without depending on arisan round/deposit eligibility.
+          ACTION: ${{ vars.VESPERA_DAU_ACTION || 'self-transfer' }}
           GROUP_ADDRESS: ${{ vars.VESPERA_DAU_GROUP_ADDRESS || vars.VESPERA_GROUP_ADDRESS || '' }}
           GROUP_ALLOWLIST: ${{ vars.VESPERA_GROUP_ALLOWLIST || '' }}
           MAX_AMOUNT: ${{ vars.VESPERA_MAX_AMOUNT || '' }}
