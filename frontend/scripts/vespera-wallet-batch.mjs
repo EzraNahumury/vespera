@@ -62,6 +62,23 @@ function short(address) {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
+function normalizePrivateKey(value, name) {
+  let key = String(value ?? "").trim();
+  const assignment = key.match(/^(?:export\s+)?[A-Za-z_][A-Za-z0-9_]*\s*=\s*(.+)$/);
+  if (assignment) key = assignment[1].trim();
+  if (
+    (key.startsWith('"') && key.endsWith('"')) ||
+    (key.startsWith("'") && key.endsWith("'"))
+  ) {
+    key = key.slice(1, -1).trim();
+  }
+  if (!key.startsWith("0x")) key = `0x${key}`;
+  if (!/^0x[0-9a-fA-F]{64}$/.test(key)) {
+    die(`${name} must be a 32-byte hex private key, with or without 0x.`);
+  }
+  return key;
+}
+
 function batchLabelFromEnv() {
   return process.env.WALLET_BATCH?.trim() || process.env.WALLET_BATCH_FILE?.trim() || "secret";
 }
@@ -134,17 +151,18 @@ function parseWalletBatch(raw, source) {
     if (!isAddress(wallet.address ?? "")) {
       die(`wallet at position ${position} has an invalid address.`);
     }
-    if (!/^0x[0-9a-fA-F]{64}$/.test(wallet.privateKey ?? "")) {
-      die(`wallet ${wallet.index ?? position + 1} has an invalid privateKey.`);
-    }
-    const account = privateKeyToAccount(wallet.privateKey);
+    const privateKey = normalizePrivateKey(
+      wallet.privateKey,
+      `wallet ${wallet.index ?? position + 1} privateKey`,
+    );
+    const account = privateKeyToAccount(privateKey);
     if (account.address.toLowerCase() !== wallet.address.toLowerCase()) {
       die(`wallet ${wallet.index ?? position + 1} privateKey does not match its address.`);
     }
     return {
       index: Number.isInteger(Number(wallet.index)) ? Number(wallet.index) : position + 1,
       address: wallet.address,
-      privateKey: wallet.privateKey,
+      privateKey,
     };
   });
 }

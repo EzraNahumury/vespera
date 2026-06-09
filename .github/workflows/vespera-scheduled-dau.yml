@@ -67,12 +67,14 @@ jobs:
           DAU_SLOT_MINUTES: ${{ vars.VESPERA_DAU_SLOT_MINUTES || '15' }}
           DAU_BATCHES: ${{ vars.VESPERA_DAU_BATCHES || '01,02,03,04,05' }}
           DAU_RANDOM_SEED: ${{ vars.VESPERA_DAU_RANDOM_SEED || 'vespera-mainnet-dau' }}
-          DAU_PREFUND: ${{ vars.VESPERA_DAU_PREFUND || '0' }}
+          DAU_PREFUND: ${{ vars.VESPERA_DAU_PREFUND || '1' }}
           MIN_BALANCE_CELO: ${{ vars.VESPERA_DAU_MIN_BALANCE_CELO || '0.02' }}
           TARGET_BALANCE_CELO: ${{ vars.VESPERA_DAU_TARGET_BALANCE_CELO || '0.05' }}
           MAX_TOPUP_CELO: ${{ vars.VESPERA_DAU_MAX_TOPUP_CELO || '0.05' }}
 
-          ACTION: ${{ vars.VESPERA_DAU_ACTION || 'auto' }}
+          # DAU transaction behavior. "self-transfer" creates a wallet-originated tx
+          # without depending on arisan round/deposit eligibility.
+          ACTION: ${{ vars.VESPERA_DAU_ACTION || 'self-transfer' }}
           GROUP_ADDRESS: ${{ vars.VESPERA_DAU_GROUP_ADDRESS || vars.VESPERA_GROUP_ADDRESS || '' }}
           GROUP_ALLOWLIST: ${{ vars.VESPERA_GROUP_ALLOWLIST || '' }}
           MAX_AMOUNT: ${{ vars.VESPERA_MAX_AMOUNT || '' }}

@@ -268,9 +268,7 @@ const walletClient = account
 function loadAgentAccount() {
   const pk = process.env.AGENT_PRIVATE_KEY;
   if (!pk) return null;
-  const hex = pk.startsWith("0x") ? pk : `0x${pk}`;
-  if (!/^0x[0-9a-fA-F]{64}$/.test(hex)) die("AGENT_PRIVATE_KEY must be a 32-byte hex string.");
-  return privateKeyToAccount(hex);
+  return privateKeyToAccount(normalizePrivateKey(pk, "AGENT_PRIVATE_KEY"));
 }
 const agentAccount = loadAgentAccount();
 const agentWalletClient = agentAccount
@@ -283,11 +281,27 @@ function readBool(name, fallbackValue) {
   return ["1", "true", "yes", "y", "on"].includes(raw.toLowerCase());
 }
 
+function normalizePrivateKey(value, name) {
+  let key = String(value ?? "").trim();
+  const assignment = key.match(/^(?:export\s+)?[A-Za-z_][A-Za-z0-9_]*\s*=\s*(.+)$/);
+  if (assignment) key = assignment[1].trim();
+  if (
+    (key.startsWith('"') && key.endsWith('"')) ||
+    (key.startsWith("'") && key.endsWith("'"))
+  ) {
+    key = key.slice(1, -1).trim();
+  }
+  if (!key.startsWith("0x")) key = `0x${key}`;
+  if (!/^0x[0-9a-fA-F]{64}$/.test(key)) {
+    die(`${name} must be a 32-byte hex private key, with or without 0x.`);
+  }
+  return key;
+}
+
 function loadAccount() {
   const pk = process.env.PRIVATE_KEY ?? process.env.VESPERA_TX_PRIVATE_KEY;
   if (!pk) return null;
-  if (!/^0x[0-9a-fA-F]{64}$/.test(pk)) die("PRIVATE_KEY must be a 0x-prefixed 32-byte hex string.");
-  return privateKeyToAccount(pk);
+  return privateKeyToAccount(normalizePrivateKey(pk, "PRIVATE_KEY"));
 }
 
 function normalizeAddress(value, name, optional = false) {

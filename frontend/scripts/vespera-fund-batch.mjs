@@ -75,6 +75,23 @@ function short(address) {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
+function normalizePrivateKey(value, name) {
+  let key = String(value ?? "").trim();
+  const assignment = key.match(/^(?:export\s+)?[A-Za-z_][A-Za-z0-9_]*\s*=\s*(.+)$/);
+  if (assignment) key = assignment[1].trim();
+  if (
+    (key.startsWith('"') && key.endsWith('"')) ||
+    (key.startsWith("'") && key.endsWith("'"))
+  ) {
+    key = key.slice(1, -1).trim();
+  }
+  if (!key.startsWith("0x")) key = `0x${key}`;
+  if (!/^0x[0-9a-fA-F]{64}$/.test(key)) {
+    die(`${name} must be a 32-byte hex private key, with or without 0x.`);
+  }
+  return key;
+}
+
 function txUrl(hash) {
   return `${celo.blockExplorers.default.url}/tx/${hash}`;
 }
@@ -207,8 +224,7 @@ function loadFunderAccount(optional) {
     if (optional) return null;
     die("FUNDER_PRIVATE_KEY is required when DRY_RUN=0.");
   }
-  if (!/^0x[0-9a-fA-F]{64}$/.test(key)) die("FUNDER_PRIVATE_KEY must be a 0x-prefixed 32-byte hex string.");
-  return privateKeyToAccount(key);
+  return privateKeyToAccount(normalizePrivateKey(key, "FUNDER_PRIVATE_KEY"));
 }
 
 async function main() {
