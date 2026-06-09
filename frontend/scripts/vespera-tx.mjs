@@ -358,7 +358,10 @@ async function sendContractWith(label, params, txClient, txSigner) {
       hash = await txClient.writeContract({ ...params, gas: gasEstimate });
       break;
     } catch (err) {
-      if (attempt === 3) throw err;
+      if (attempt === 3) {
+        info(`${label}: tx failed after 3 attempts — ${err.shortMessage ?? err.message ?? String(err)}`);
+        return null;
+      }
       info(`${label}: tx error attempt ${attempt}/3 — retry in 3s`);
       await new Promise((r) => setTimeout(r, 3_000));
     }
