@@ -54,6 +54,7 @@ jobs:
       - name: Run scheduled DAU batch slice
         env:
           RPC_URL: ${{ secrets.CELO_RPC_URL || vars.CELO_RPC_URL || 'https://forno.celo.org' }}
+          FUNDER_PRIVATE_KEY: ${{ secrets.VESPERA_FUNDER_PRIVATE_KEY }}
 
           # Keep scheduled mainnet dry-run by default. To enable live scheduled DAU:
           #   VESPERA_DAU_DRY_RUN=false
@@ -66,6 +67,10 @@ jobs:
           DAU_SLOT_MINUTES: ${{ vars.VESPERA_DAU_SLOT_MINUTES || '15' }}
           DAU_BATCHES: ${{ vars.VESPERA_DAU_BATCHES || '01,02,03,04,05' }}
           DAU_RANDOM_SEED: ${{ vars.VESPERA_DAU_RANDOM_SEED || 'vespera-mainnet-dau' }}
+          DAU_PREFUND: ${{ vars.VESPERA_DAU_PREFUND || '1' }}
+          MIN_BALANCE_CELO: ${{ vars.VESPERA_DAU_MIN_BALANCE_CELO || '0.02' }}
+          TARGET_BALANCE_CELO: ${{ vars.VESPERA_DAU_TARGET_BALANCE_CELO || '0.05' }}
+          MAX_TOPUP_CELO: ${{ vars.VESPERA_DAU_MAX_TOPUP_CELO || '0.05' }}
 
           # DAU transaction behavior. "self-transfer" creates a wallet-originated tx
           # without depending on arisan round/deposit eligibility.

@@ -11,6 +11,7 @@ const JAKARTA_OFFSET_MS = 7 * 60 * 60 * 1000;
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const frontendDir = path.resolve(scriptDir, "..");
 const walletBatchScript = path.join(scriptDir, "vespera-wallet-batch.mjs");
+const fundBatchScript = path.join(scriptDir, "vespera-fund-batch.mjs");
 
 function die(message) {
   console.error(`[vespera-scheduled-dau] Error: ${message}`);
@@ -205,6 +206,35 @@ async function main() {
 
     info(`batch=${batch} offset=${offset} limit=${limit}: starting`);
     anyRan = true;
+
+    const preFund = readBool("DAU_PREFUND", true);
+    const hasFunderKey = Boolean(
+      process.env.FUNDER_PRIVATE_KEY || process.env.VESPERA_FUNDER_PRIVATE_KEY,
+    );
+    if (preFund && hasFunderKey) {
+      info(`batch=${batch} offset=${offset} limit=${limit}: pre-funding`);
+      const fundResult = spawnSync(process.execPath, [fundBatchScript], {
+        cwd: frontendDir,
+        stdio: "inherit",
+        env: {
+          ...process.env,
+          WALLET_BATCH: batch,
+          WALLET_BATCH_JSON: secret.value,
+          WALLET_OFFSET: String(offset),
+          WALLET_LIMIT: String(limit),
+          MAX_WALLETS_PER_RUN: process.env.MAX_WALLETS_PER_RUN ?? "100",
+        },
+      });
+
+      if (fundResult.status !== 0) {
+        failed += 1;
+        info(`batch=${batch}: pre-fund failed with exit ${fundResult.status}`);
+        if (!readBool("CONTINUE_ON_ERROR", true)) process.exit(fundResult.status ?? 1);
+        continue;
+      }
+    } else if (preFund) {
+      info(`batch=${batch}: pre-fund skipped (VESPERA_FUNDER_PRIVATE_KEY/FUNDER_PRIVATE_KEY is not set)`);
+    }
 
     const result = spawnSync(process.execPath, [walletBatchScript], {
       cwd: frontendDir,
