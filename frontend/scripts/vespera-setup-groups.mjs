@@ -45,7 +45,7 @@ const frontendDir = path.resolve(scriptDir, "..");
 // --- Kontrak mainnet ---
 const CELO_MAINNET_ID = 42220;
 const CELO_TOKEN_MAINNET = "0x471EcE3750Da237f93B8E339c536989b8978a438";
-const GROUP_REGISTRY = "0x493613949d63b63b02A58Ee899e9c6cd647Ae86b";
+const GROUP_REGISTRY = "0xD5D1a4713B8774783CFe33Bb2c68655Dc53036f0";
 
 const rpcUrls = [
   process.env.RPC_URL ?? "https://forno.celo.org",

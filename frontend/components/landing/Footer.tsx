@@ -3,10 +3,10 @@ import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 
 const contracts = [
-  { name: "GroupRegistry",       addr: "0x493...e86b", url: "https://celoscan.io/address/0x493613949d63b63b02A58Ee899e9c6cd647Ae86b" },
-  { name: "VotingEngine",        addr: "0xCa8...07f6", url: "https://celoscan.io/address/0xCa8C94Fb21C5d6b8f786e6d549dAb2a8Fe2f07f6" },
-  { name: "Treasury",            addr: "0x4D8...Dabd", url: "https://celoscan.io/address/0x4D84DD953FCdecfD54eA50e4ce6Ea809D9f9DAbd" },
-  { name: "ReputationRegistry",  addr: "0xd6E...521",  url: "https://celoscan.io/address/0xd6EE8f307B9564A6E0EA8Aa91b5A74Cb40a3F521" },
+  { name: "Treasury",            addr: "0xe0F5...9009", url: "https://celoscan.io/address/0xe0F543010FbAc613a6550E19Da6a680173Cf9009" },
+  { name: "GroupRegistry",       addr: "0xD5D1...36f0", url: "https://celoscan.io/address/0xD5D1a4713B8774783CFe33Bb2c68655Dc53036f0" },
+  { name: "VotingEngine",        addr: "0x7606...788a", url: "https://celoscan.io/address/0x760674315E3c1eA8665a756155C6602e547E788A" },
+  { name: "ReputationRegistry",  addr: "0x7f4a...b6af", url: "https://celoscan.io/address/0x7f4a0C69c3699e7d89bdB527f9e0048Da137b6aF" },
 ];
 
 const appLinks = [
