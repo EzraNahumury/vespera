@@ -1,7 +1,7 @@
 "use client";
 import { useReadContracts } from "wagmi";
 import { ArisanGroupABI } from "@/abis/ArisanGroup";
-import { TOKEN_LABELS } from "@/lib/chain";
+import { CREDIT_SYMBOL } from "@/lib/chain";
 import { ChevronRight } from "lucide-react";
 import { formatUnits } from "viem";
 import Link from "next/link";
@@ -20,12 +20,11 @@ export function GroupCard({ address }: { address: `0x${string}` }) {
 
   const memberCount  = data?.[0]?.result ? Number(data[0].result) : 0;
   const maxMembers   = data?.[1]?.result ? Number(data[1].result) : 0;
-  const token        = data?.[2]?.result as `0x${string}` | undefined;
   const depositAmt   = data?.[3]?.result as bigint | undefined;
   const currentRound = data?.[4]?.result ? Number(data[4].result) : 1;
   const hasRequest   = data?.[5]?.result ? Number(data[5].result) > 0 : false;
 
-  const tokenLabel = token ? (TOKEN_LABELS[token] ?? "ERC-20") : "—";
+  const tokenLabel = CREDIT_SYMBOL;
   const amount     = depositAmt ? formatUnits(depositAmt, 18) : "—";
   const fillPct    = memberCount && maxMembers ? (memberCount / maxMembers) * 100 : 0;
 

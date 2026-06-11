@@ -29,13 +29,26 @@ export const wagmiConfig = createConfig({
 });
 
 export const CONTRACTS = {
-  agentRegistry: (process.env.NEXT_PUBLIC_AGENT_REGISTRY ?? "0x67aF4795C9C76677F252d1b60DA7b240DB3A7A10") as `0x${string}`,
-  badgeNFT: (process.env.NEXT_PUBLIC_BADGE_NFT ?? "0x4d5AcB5cDE12C0657C0D8aA4c3C8004196dB8410") as `0x${string}`,
-  reputationRegistry: (process.env.NEXT_PUBLIC_REPUTATION_REGISTRY ?? "0xd6EE8f307B9564A6E0EA8Aa91b5A74Cb40a3F521") as `0x${string}`,
-  treasury: (process.env.NEXT_PUBLIC_TREASURY ?? "0x4D84DD953FCdecfD54eA50e4ce6Ea809D9f9DAbd") as `0x${string}`,
-  votingEngine: (process.env.NEXT_PUBLIC_VOTING_ENGINE ?? "0xCa8C94Fb21C5d6b8f786e6d549dAb2a8Fe2f07f6") as `0x${string}`,
-  groupRegistry: (process.env.NEXT_PUBLIC_GROUP_REGISTRY ?? "0x493613949d63b63b02A58Ee899e9c6cd647Ae86b") as `0x${string}`,
+  agentRegistry: (process.env.NEXT_PUBLIC_AGENT_REGISTRY ?? "0x0f4afA3e8297e817B3Aa638cd592a46961ac7228") as `0x${string}`,
+  badgeNFT: (process.env.NEXT_PUBLIC_BADGE_NFT ?? "0x1995408F84a41Bc81Ec748b6b0718e30f65A5fB2") as `0x${string}`,
+  reputationRegistry: (process.env.NEXT_PUBLIC_REPUTATION_REGISTRY ?? "0x7f4a0C69c3699e7d89bdB527f9e0048Da137b6aF") as `0x${string}`,
+  treasury: (process.env.NEXT_PUBLIC_TREASURY ?? "0xe0F543010FbAc613a6550E19Da6a680173Cf9009") as `0x${string}`,
+  votingEngine: (process.env.NEXT_PUBLIC_VOTING_ENGINE ?? "0x760674315E3c1eA8665a756155C6602e547E788A") as `0x${string}`,
+  groupRegistry: (process.env.NEXT_PUBLIC_GROUP_REGISTRY ?? "0xD5D1a4713B8774783CFe33Bb2c68655Dc53036f0") as `0x${string}`,
 } as const;
+
+// --- In-game credits ------------------------------------------------------
+// Deposits/withdrawals no longer move ERC-20 tokens. Users deposit native CELO
+// into the Treasury and receive internal "credits" at a fixed 1:1000 rate
+// (Voxel-style). Credits are an 18-decimal quantity: 1 CELO -> 1000.0 credits.
+export const CREDIT_PER_CELO = BigInt(1000);
+export const CREDIT_DECIMALS = 18;
+export const CREDIT_SYMBOL = "CR";
+
+/** Wei of native CELO -> credits (18-decimal). */
+export const celoToCredits = (celoWei: bigint) => celoWei * CREDIT_PER_CELO;
+/** Credits (18-decimal) -> wei of native CELO. */
+export const creditsToCelo = (credits: bigint) => credits / CREDIT_PER_CELO;
 
 export const TOKENS = {
   CELO: "0x471EcE3750Da237f93B8E339c536989b8978a438" as `0x${string}`,

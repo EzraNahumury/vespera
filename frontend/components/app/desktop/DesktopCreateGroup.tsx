@@ -2,16 +2,17 @@
 import { useState } from "react";
 import { useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
 import { parseUnits } from "viem";
-import { CONTRACTS, TOKENS, TOKEN_LABELS } from "@/lib/chain";
+import { CONTRACTS, TOKENS, CREDIT_SYMBOL } from "@/lib/chain";
 import { GroupRegistryABI } from "@/abis/GroupRegistry";
 import { PageContainer, PageHeader, Card, Button, ButtonLink } from "@/components/ui/primitives";
 import { CheckCircle, Loader } from "lucide-react";
 
-const TOKEN_OPTIONS = Object.entries(TOKENS).map(([k, v]) => ({ label: k, value: v as `0x${string}` }));
+// Deposits are denominated in in-game credits now; the on-chain depositToken
+// field is just a free-form label, so we pass a fixed marker address.
+const DEPOSIT_LABEL = TOKENS.CELO;
 
 export function DesktopCreateGroup() {
   const { isConnected } = useAccount();
-  const [token, setToken] = useState<`0x${string}`>(TOKENS.CELO);
   const [amount, setAmount] = useState("");
   const [maxMembers, setMaxMembers] = useState("10");
   const [roundDays, setRoundDays] = useState("30");
@@ -26,7 +27,7 @@ export function DesktopCreateGroup() {
       address: CONTRACTS.groupRegistry,
       abi: GroupRegistryABI,
       functionName: "createGroup",
-      args: [token, parseUnits(amount, 18), BigInt(maxMembers), BigInt(Number(roundDays) * 86400), metaURI],
+      args: [DEPOSIT_LABEL, parseUnits(amount, 18), BigInt(maxMembers), BigInt(Number(roundDays) * 86400), metaURI],
     });
   }
 
@@ -53,16 +54,9 @@ export function DesktopCreateGroup() {
           {/* Form */}
           <Card className="space-y-6">
             <div>
-              <label className="block text-sm font-semibold text-black mb-2">Deposit Token</label>
-              <div className="flex gap-2">
-                {TOKEN_OPTIONS.map(({ label, value }) => (
-                  <button key={value} onClick={() => setToken(value)} className={segBtn(token === value)}>{label}</button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-black mb-2">Deposit Amount ({TOKEN_LABELS[token]})</label>
-              <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="e.g. 10" className={inputCls} />
+              <label className="block text-sm font-semibold text-black mb-2">Deposit Amount ({CREDIT_SYMBOL})</label>
+              <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="e.g. 100" className={inputCls} />
+              <p className="text-xs text-black/40 mt-1.5">Per-round deposit in credits. Members top up credits with CELO (1 CELO = 1000 {CREDIT_SYMBOL}).</p>
             </div>
             <div>
               <label className="block text-sm font-semibold text-black mb-2">Max Members <span className="text-black/40 font-normal">(5–15)</span></label>
@@ -90,7 +84,7 @@ export function DesktopCreateGroup() {
           <div className="rounded-2xl bg-[#14532D] p-8 text-white card-shadow">
             <h3 className="text-xl font-semibold mb-4">How groups work</h3>
             <ul className="space-y-3 text-white/70 text-sm">
-              <li>① Create a group with fixed deposit amount and token</li>
+              <li>① Create a group with a fixed per-round deposit in credits</li>
               <li>② Invite 5–15 members to join your group</li>
               <li>③ Every member deposits each round</li>
               <li>④ One member requests withdrawal per round</li>

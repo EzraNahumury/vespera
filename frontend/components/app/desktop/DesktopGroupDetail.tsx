@@ -1,13 +1,13 @@
 "use client";
-import { useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
+import { useReadContracts, useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
 import { formatUnits, isAddress } from "viem";
 import { useEffect, useState } from "react";
 import { ArisanGroupABI } from "@/abis/ArisanGroup";
-import { ERC20ABI } from "@/abis/ERC20";
 import { VotingEngineABI } from "@/abis/VotingEngine";
-import { TOKEN_LABELS, CONTRACTS } from "@/lib/chain";
+import { CONTRACTS, CREDIT_DECIMALS, CREDIT_SYMBOL } from "@/lib/chain";
 import { VoteStatus } from "@/components/app/VoteStatus";
 import { DepositPanel } from "@/components/app/DepositPanel";
+import { CreditWallet } from "@/components/app/CreditWallet";
 import { WithdrawalPanel } from "@/components/app/WithdrawalPanel";
 import { PageContainer, Card, Button, Stat } from "@/components/ui/primitives";
 import { Loader, CheckCircle, XCircle, Users, Clock, ArrowLeft, UserPlus } from "lucide-react";
@@ -50,11 +50,8 @@ export function DesktopGroupDetail({ address }: { address: `0x${string}` }) {
   const isCreator = !!creator && !!wallet && creator.toLowerCase() === wallet.toLowerCase();
   const canJoin = !!isInvited && !isMember;
 
-  const { data: tokenDecimals } = useReadContract({
-    address: token, abi: ERC20ABI, functionName: "decimals", query: { enabled: !!token },
-  });
-  const decimals = tokenDecimals !== undefined ? Number(tokenDecimals) : 18;
-  const tokenLabel = token ? (TOKEN_LABELS[token] ?? "token") : "—";
+  const decimals = CREDIT_DECIMALS;
+  const tokenLabel = CREDIT_SYMBOL;
   const depositFmt = depositAmount ? formatUnits(depositAmount, decimals) : "—";
 
   const { writeContract: castVote, isPending: voting } = useWriteContract();
@@ -105,6 +102,8 @@ export function DesktopGroupDetail({ address }: { address: `0x${string}` }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
+          {wallet && <CreditWallet />}
+
           {canJoin && (
             <div className="rounded-2xl bg-[#86EFAC]/15 border border-[#86EFAC] p-6">
               <h2 className="text-black text-xl font-semibold mb-2">You&apos;re invited 🎉</h2>

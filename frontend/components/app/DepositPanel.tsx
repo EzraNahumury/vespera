@@ -2,21 +2,15 @@
 import { useEffect } from "react";
 import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { ArisanGroupABI } from "@/abis/ArisanGroup";
-import { ERC20ABI } from "@/abis/ERC20";
 import { useDepositGate } from "@/hooks/useDepositGate";
 import { useToast } from "@/components/ui/Toast";
-import { Loader, AlertTriangle, ShieldCheck } from "lucide-react";
+import { Loader, AlertTriangle } from "lucide-react";
 
 /**
- * Self-contained deposit controls with a two-step approve→deposit flow.
- *
- * - Reads balance + allowance via useDepositGate.
- * - If balance < deposit → shows an insufficient-balance warning, blocks both.
- * - If allowance < deposit → shows an Approve button (approves exactly the
- *   deposit amount to the group), re-reading the gate once it confirms.
- * - Once approved + funded → shows the Deposit button.
- *
- * Renders only the inner controls; callers wrap in their own surface.
+ * Self-contained deposit control. The round's fixed amount is paid into the
+ * group pot directly from the member's personal CREDIT balance — no ERC-20
+ * approval. If the member doesn't hold enough credits, we point them at the
+ * credit wallet to top up (deposit native CELO @ 1:1000) first.
  */
 export function DepositPanel({
   group,
@@ -38,20 +32,10 @@ export function DepositPanel({
   const gate = useDepositGate(group, token, owner, depositAmount);
   const { toast } = useToast();
 
-  const { writeContract: approve, data: aHash, isPending: aPending } = useWriteContract();
-  const { isLoading: aConfirming, isSuccess: aDone } = useWaitForTransactionReceipt({ hash: aHash });
   const { writeContract: deposit, data: dHash, isPending: dPending } = useWriteContract();
   const { isLoading: dConfirming, isSuccess: dDone } = useWaitForTransactionReceipt({ hash: dHash });
 
-  // After approve confirms, re-read the gate and tell the user they can deposit.
-  useEffect(() => {
-    if (aDone) {
-      gate.refetch();
-      toast("success", "Approved — you can deposit now.");
-    }
-  }, [aDone]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // After deposit confirms, re-read balance and confirm.
+  // After deposit confirms, re-read the credit balance and confirm.
   useEffect(() => {
     if (dDone) {
       gate.refetch();
@@ -69,13 +53,6 @@ export function DepositPanel({
     const msg = (e as { shortMessage?: string })?.shortMessage ?? "Transaction failed.";
     toast("error", msg);
   }
-  function handleApprove() {
-    if (!token || depositAmount === undefined) return;
-    approve(
-      { address: token, abi: ERC20ABI, functionName: "approve", args: [group, depositAmount] },
-      { onError: txError },
-    );
-  }
   function handleDeposit() {
     deposit({ address: group, abi: ArisanGroupABI, functionName: "deposit" }, { onError: txError });
   }
@@ -86,41 +63,28 @@ export function DepositPanel({
     <div className="space-y-3">
       {/* Balance row */}
       <div className="flex items-center justify-between text-sm">
-        <span className="text-black/50">Your balance</span>
+        <span className="text-black/50">Your credits</span>
         {loading ? (
           <span className="h-4 w-24 rounded bg-black/5 animate-pulse" />
         ) : (
           <span className="font-medium text-black">
-            {gate.balanceFmt !== undefined ? `${gate.balanceFmt} ${gate.symbol ?? tokenLabel}` : "—"}
+            {gate.balanceFmt !== undefined ? `${gate.balanceFmt} ${gate.symbol}` : "—"}
           </span>
         )}
       </div>
 
       {loading ? (
         <button disabled className={`${btn} bg-black/5 text-black/30`}>
-          <Loader className={`${spin} animate-spin`} /> Checking balance…
+          <Loader className={`${spin} animate-spin`} /> Checking credits…
         </button>
       ) : gate.insufficientBalance ? (
         <div className="flex items-start gap-2 rounded-xl bg-red-50 border border-red-100 px-3 py-2.5">
           <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
           <p className="text-red-600 text-xs leading-relaxed">
-            Insufficient balance. You need <strong>{depositFmt} {tokenLabel}</strong> to deposit this round.
+            Not enough credits. You need <strong>{depositFmt} {tokenLabel}</strong> to deposit this round — top up
+            from your credit wallet (deposit CELO) first.
           </p>
         </div>
-      ) : gate.needsApproval ? (
-        <>
-          <div className="flex items-start gap-2 rounded-xl bg-[#86EFAC]/15 border border-[#86EFAC]/40 px-3 py-2.5">
-            <ShieldCheck className="w-4 h-4 text-[#14532D] shrink-0 mt-0.5" />
-            <p className="text-[#14532D] text-xs leading-relaxed">
-              One-time step: approve the group to move <strong>{depositFmt} {tokenLabel}</strong>, then deposit.
-            </p>
-          </div>
-          <button onClick={handleApprove} disabled={aPending || aConfirming}
-            className={`${btn} bg-[#14532D] text-white hover:bg-[#166534]`}>
-            {(aPending || aConfirming) && <Loader className={`${spin} animate-spin`} />}
-            {aPending ? "Confirm in wallet…" : aConfirming ? "Approving…" : `Approve ${depositFmt} ${tokenLabel}`}
-          </button>
-        </>
       ) : (
         <button onClick={handleDeposit} disabled={dPending || dConfirming || !gate.canDeposit}
           className={`${btn} bg-[#86EFAC] text-black hover:bg-[#4ADE80]`}>
@@ -129,8 +93,8 @@ export function DepositPanel({
         </button>
       )}
 
-      {(dHash || aHash) && (
-        <a href={`https://celoscan.io/tx/${dHash ?? aHash}`} target="_blank" rel="noopener noreferrer"
+      {dHash && (
+        <a href={`https://celoscan.io/tx/${dHash}`} target="_blank" rel="noopener noreferrer"
           className="block text-center text-xs text-black/40 hover:text-[#16A34A] transition-colors">
           View transaction on Celoscan ↗
         </a>

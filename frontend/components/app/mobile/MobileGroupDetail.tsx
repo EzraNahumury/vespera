@@ -1,13 +1,13 @@
 "use client";
-import { useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
+import { useReadContracts, useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
 import { formatUnits, isAddress } from "viem";
 import { useEffect, useState } from "react";
 import { ArisanGroupABI } from "@/abis/ArisanGroup";
-import { ERC20ABI } from "@/abis/ERC20";
 import { VotingEngineABI } from "@/abis/VotingEngine";
-import { TOKEN_LABELS, CONTRACTS } from "@/lib/chain";
+import { CONTRACTS, CREDIT_DECIMALS, CREDIT_SYMBOL } from "@/lib/chain";
 import { VoteStatus } from "@/components/app/VoteStatus";
 import { DepositPanel } from "@/components/app/DepositPanel";
+import { CreditWallet } from "@/components/app/CreditWallet";
 import { WithdrawalPanel } from "@/components/app/WithdrawalPanel";
 import { Loader2, CheckCircle2, XCircle, ChevronLeft, Clock3, UserPlus } from "lucide-react";
 import Link from "next/link";
@@ -52,11 +52,8 @@ export function MobileGroupDetail({ address }: { address: `0x${string}` }) {
   const isCreator   = !!creator && !!wallet && creator.toLowerCase() === wallet.toLowerCase();
   const canJoin     = !!isInvited && !isMember;
 
-  const { data: tokenDecimals } = useReadContract({
-    address: token, abi: ERC20ABI, functionName: "decimals", query: { enabled: !!token },
-  });
-  const decimals    = tokenDecimals !== undefined ? Number(tokenDecimals) : 18;
-  const tokenLabel  = token ? (TOKEN_LABELS[token] ?? "token") : "—";
+  const decimals    = CREDIT_DECIMALS;
+  const tokenLabel  = CREDIT_SYMBOL;
   const depositFmt  = depositAmt ? formatUnits(depositAmt, decimals) : "—";
   const fillPct     = memberCount && maxMembers ? (memberCount / maxMembers) * 100 : 0;
 
@@ -218,6 +215,7 @@ export function MobileGroupDetail({ address }: { address: `0x${string}` }) {
         {/* ── Deposit tab ── */}
         {tab === "deposit" && (
           <div className="space-y-4">
+            {wallet && <CreditWallet />}
             {isMember ? (
               <>
                 <div className="bg-white rounded-2xl card-shadow px-5 py-5">

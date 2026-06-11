@@ -1,61 +1,50 @@
 "use client";
-import { useReadContracts } from "wagmi";
+import { useReadContract } from "wagmi";
 import { formatUnits } from "viem";
-import { ERC20ABI } from "@/abis/ERC20";
+import { TreasuryABI } from "@/abis/Treasury";
+import { CONTRACTS, CREDIT_DECIMALS, CREDIT_SYMBOL } from "@/lib/chain";
 
 /**
- * Gates an ArisanGroup deposit: reads the member's token balance + the
- * allowance granted to the group, then derives whether they need to approve,
- * whether they hold enough, and whether deposit is unblocked.
+ * Gates an ArisanGroup deposit: reads the member's personal CREDIT balance in
+ * the Treasury and compares it with the round's fixed deposit (in credits).
  *
- * One multicall (balanceOf + allowance + decimals + symbol). All comparisons
- * use raw bigints, so token decimals don't affect correctness — decimals are
- * only used to format the display string.
+ * Credits are minted by depositing native CELO (1 CELO = 1000 credits) and live
+ * independently of any group, so there is no ERC-20 approval step anymore — the
+ * group simply debits the member's credit balance when they deposit.
  *
- * @param group    the ArisanGroup (spender + transferFrom target)
- * @param token    the depositToken (ERC-20)
- * @param owner    the connected member
- * @param required the depositAmount (raw bigint, as stored on-chain)
+ * @param group     the ArisanGroup (unused for reads; kept for signature parity)
+ * @param _token    legacy deposit-token label (ignored — credits are unit-less)
+ * @param owner     the connected member
+ * @param required  the depositAmount in credits (raw 18-decimal bigint)
  */
 export function useDepositGate(
   group?: `0x${string}`,
-  token?: `0x${string}`,
+  _token?: `0x${string}`,
   owner?: `0x${string}`,
   required?: bigint,
 ) {
-  const enabled = !!group && !!token && !!owner;
-  const { data, isLoading, refetch } = useReadContracts({
-    contracts: enabled
-      ? [
-          { address: token, abi: ERC20ABI, functionName: "balanceOf" as const, args: [owner] },
-          { address: token, abi: ERC20ABI, functionName: "allowance" as const, args: [owner, group] },
-          { address: token, abi: ERC20ABI, functionName: "decimals" as const },
-          { address: token, abi: ERC20ABI, functionName: "symbol" as const },
-        ]
-      : [],
+  const enabled = !!owner;
+  const { data, isLoading, refetch } = useReadContract({
+    address: CONTRACTS.treasury,
+    abi: TreasuryABI,
+    functionName: "creditBalance",
+    args: owner ? [owner] : undefined,
     query: { enabled },
   });
 
-  const balance = data?.[0]?.result as bigint | undefined;
-  const allowance = data?.[1]?.result as bigint | undefined;
-  const decimals = data?.[2]?.result !== undefined ? Number(data[2].result) : undefined;
-  const symbol = data?.[3]?.result as string | undefined;
-
-  const ready = balance !== undefined && allowance !== undefined && required !== undefined;
-  const needsApproval = ready ? allowance! < required! : false;
+  const balance = data as bigint | undefined;
+  const ready = balance !== undefined && required !== undefined;
   const insufficientBalance = ready ? balance! < required! : false;
-  const canDeposit = ready ? !needsApproval && !insufficientBalance : false;
+  const canDeposit = ready ? !insufficientBalance : false;
 
-  const balanceFmt =
-    balance !== undefined && decimals !== undefined ? formatUnits(balance, decimals) : undefined;
+  const balanceFmt = balance !== undefined ? formatUnits(balance, CREDIT_DECIMALS) : undefined;
 
   return {
     balance,
     balanceFmt,
-    allowance,
-    decimals,
-    symbol,
-    needsApproval,
+    symbol: CREDIT_SYMBOL,
+    decimals: CREDIT_DECIMALS,
+    needsApproval: false, // credits never need an allowance
     insufficientBalance,
     canDeposit,
     isLoading,

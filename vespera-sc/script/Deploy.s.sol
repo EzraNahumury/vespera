@@ -15,15 +15,11 @@ import {GroupRegistry} from "../src/GroupRegistry.sol";
 ///   PRIVATE_KEY     - deployer key (becomes admin/owner of all contracts)
 /// Optional env:
 ///   AGENT_ADDRESS   - off-chain Requester Agent signer granted AGENT_ROLE (default: deployer)
-///   USDM_ADDRESS    - Mento Dollar; allowed as a deposit token if set
-///   USDC_ADDRESS    - USD Coin;     allowed as a deposit token if set
-///   USDT_ADDRESS    - Tether USD;   allowed as a deposit token if set
-///   CELO_ADDRESS    - override the CELO ERC-20 adapter address. Optional: on Celo mainnet
-///                     (42220) and Alfajores (44787) it is auto-detected, so CELO is always
-///                     allowed as a deposit token. CELO is the native coin but exposes a full
-///                     ERC-20 interface at that address (native and ERC-20 balances are unified),
-///                     so deposits flow through approve + transferFrom — no payable path needed.
-///                     Gas is paid in native CELO by default.
+///   CREDIT_PER_CELO - credits minted per 1 CELO deposited (default 1000, Voxel-style)
+///   LIQUIDITY_CELO  - native CELO (wei) to seed as withdrawal headroom (default 0)
+///
+/// Deposits are native CELO @ 1:`creditPerCelo` into a personal in-game credit balance — no
+/// ERC-20 deposit tokens, no approvals. Gas is paid in native CELO by default.
 ///
 /// Example:
 ///   forge script script/Deploy.s.sol:Deploy --rpc-url $CELO_RPC --broadcast
@@ -66,18 +62,22 @@ contract Deploy is Script {
         badge.grantRole(badge.MINTER_ROLE(), address(reputation));
         voting.grantRole(voting.AGENT_ROLE(), agent);
 
-        // 6. Allow deposit tokens. Stablecoins if their addresses are provided; CELO is
-        //    auto-detected per chain (overridable via CELO_ADDRESS).
-        _allowIfSet(treasury, "USDM_ADDRESS");
-        _allowIfSet(treasury, "USDC_ADDRESS");
-        _allowIfSet(treasury, "USDT_ADDRESS");
-        address celo = vm.envOr("CELO_ADDRESS", _defaultCelo());
-        if (celo != address(0)) {
-            treasury.allowToken(celo, true);
-            console2.log("Allowed CELO:      ", celo);
+        // 6. Configure the credit conversion rate (native CELO -> in-game credits).
+        uint256 rate = vm.envOr("CREDIT_PER_CELO", uint256(1000));
+        if (rate != treasury.creditPerCelo()) {
+            treasury.setCreditPerCelo(rate);
+        }
+
+        // 7. Optionally seed CELO withdrawal liquidity (headroom for rounding).
+        uint256 liquidity = vm.envOr("LIQUIDITY_CELO", uint256(0));
+        if (liquidity != 0) {
+            treasury.fundLiquidity{value: liquidity}();
+            console2.log("Seeded liquidity:  ", liquidity);
         }
 
         vm.stopBroadcast();
+
+        console2.log("creditPerCelo:     ", rate);
 
         console2.log("AgentRegistry:     ", address(agentRegistry));
         console2.log("BadgeNFT:          ", address(badge));
@@ -87,21 +87,6 @@ contract Deploy is Script {
         console2.log("GroupRegistry:     ", address(registry));
         console2.log("Admin:             ", admin);
         console2.log("Agent (AGENT_ROLE):", agent);
-    }
-
-    function _allowIfSet(Treasury treasury, string memory key) internal {
-        address token = vm.envOr(key, address(0));
-        if (token != address(0)) {
-            treasury.allowToken(token, true);
-            console2.log("Allowed token:     ", token);
-        }
-    }
-
-    /// @notice Canonical CELO ERC-20 adapter for the current chain (0 if unknown).
-    function _defaultCelo() internal view returns (address) {
-        if (block.chainid == 42220) return 0x471EcE3750Da237f93B8E339c536989b8978a438; // Celo mainnet
-        if (block.chainid == 44787) return 0xF194afDf50B03e69Bd7D057c1Aa9e10c9954E4C9; // Alfajores
-        return address(0);
     }
 
     /// @notice Read PRIVATE_KEY tolerating a missing "0x" prefix.

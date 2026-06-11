@@ -1,4 +1,5 @@
-export const TreasuryABI = [
+export const TreasuryABI = 
+[
   {
     "type": "constructor",
     "inputs": [
@@ -12,37 +13,46 @@ export const TreasuryABI = [
   },
   {
     "type": "function",
-    "name": "allowToken",
-    "inputs": [
-      {
-        "name": "token",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "allowed",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "balanceOf",
     "inputs": [
       {
         "name": "group",
         "type": "address",
         "internalType": "address"
-      },
+      }
+    ],
+    "outputs": [
       {
-        "name": "token",
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "creditBalance",
+    "inputs": [
+      {
+        "name": "user",
         "type": "address",
         "internalType": "address"
       }
     ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "creditPerCelo",
+    "inputs": [],
     "outputs": [
       {
         "name": "",
@@ -55,31 +65,35 @@ export const TreasuryABI = [
   {
     "type": "function",
     "name": "deposit",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "fundLiquidity",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "groupBalance",
     "inputs": [
       {
-        "name": "token",
+        "name": "group",
         "type": "address",
         "internalType": "address"
-      },
-      {
-        "name": "from",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "amount",
-        "type": "uint256",
-        "internalType": "uint256"
       }
     ],
     "outputs": [
       {
-        "name": "received",
+        "name": "",
         "type": "uint256",
         "internalType": "uint256"
       }
     ],
-    "stateMutability": "nonpayable"
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -90,25 +104,6 @@ export const TreasuryABI = [
         "name": "",
         "type": "address",
         "internalType": "contract IGroupRegistry"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "isAllowedToken",
-    "inputs": [
-      {
-        "name": "token",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
       }
     ],
     "stateMutability": "view"
@@ -128,15 +123,28 @@ export const TreasuryABI = [
   },
   {
     "type": "function",
-    "name": "release",
+    "name": "payFromCredits",
     "inputs": [
       {
-        "name": "group",
+        "name": "from",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "token",
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "release",
+    "inputs": [
+      {
+        "name": "group",
         "type": "address",
         "internalType": "address"
       },
@@ -158,6 +166,19 @@ export const TreasuryABI = [
     "type": "function",
     "name": "renounceOwnership",
     "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setCreditPerCelo",
+    "inputs": [
+      {
+        "name": "newCreditPerCelo",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
     "outputs": [],
     "stateMutability": "nonpayable"
   },
@@ -214,29 +235,49 @@ export const TreasuryABI = [
     "stateMutability": "view"
   },
   {
+    "type": "function",
+    "name": "withdraw",
+    "inputs": [
+      {
+        "name": "credits",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "CreditPerCeloSet",
+    "inputs": [
+      {
+        "name": "creditPerCelo",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
     "type": "event",
     "name": "Deposited",
     "inputs": [
       {
-        "name": "group",
+        "name": "user",
         "type": "address",
         "indexed": true,
         "internalType": "address"
       },
       {
-        "name": "token",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
+        "name": "celoIn",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       },
       {
-        "name": "from",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "amount",
+        "name": "creditsOut",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -253,6 +294,25 @@ export const TreasuryABI = [
         "type": "address",
         "indexed": true,
         "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "LiquidityFunded",
+    "inputs": [
+      {
+        "name": "from",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "celoIn",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       }
     ],
     "anonymous": false
@@ -278,7 +338,7 @@ export const TreasuryABI = [
   },
   {
     "type": "event",
-    "name": "Released",
+    "name": "Paid",
     "inputs": [
       {
         "name": "group",
@@ -287,7 +347,26 @@ export const TreasuryABI = [
         "internalType": "address"
       },
       {
-        "name": "token",
+        "name": "from",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Released",
+    "inputs": [
+      {
+        "name": "group",
         "type": "address",
         "indexed": true,
         "internalType": "address"
@@ -309,25 +388,6 @@ export const TreasuryABI = [
   },
   {
     "type": "event",
-    "name": "TokenAllowed",
-    "inputs": [
-      {
-        "name": "token",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "allowed",
-        "type": "bool",
-        "indexed": false,
-        "internalType": "bool"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
     "name": "VotingEngineSet",
     "inputs": [
       {
@@ -340,8 +400,48 @@ export const TreasuryABI = [
     "anonymous": false
   },
   {
+    "type": "event",
+    "name": "Withdrawn",
+    "inputs": [
+      {
+        "name": "user",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "creditsIn",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "celoOut",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "InsufficientCredits",
+    "inputs": []
+  },
+  {
     "type": "error",
     "name": "InsufficientEscrow",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InsufficientLiquidity",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidRate",
     "inputs": []
   },
   {
@@ -383,23 +483,17 @@ export const TreasuryABI = [
   },
   {
     "type": "error",
-    "name": "SafeERC20FailedOperation",
-    "inputs": [
-      {
-        "name": "token",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "TokenNotAllowed",
+    "name": "TransferFailed",
     "inputs": []
   },
   {
     "type": "error",
     "name": "ZeroAddress",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ZeroAmount",
     "inputs": []
   }
 ] as const;

@@ -2,18 +2,19 @@
 import { useState } from "react";
 import { useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
 import { parseUnits } from "viem";
-import { CONTRACTS, TOKENS, TOKEN_LABELS } from "@/lib/chain";
+import { CONTRACTS, TOKENS, CREDIT_SYMBOL } from "@/lib/chain";
 import { GroupRegistryABI } from "@/abis/GroupRegistry";
 import { CheckCircle2, Loader2, ChevronLeft } from "lucide-react";
 import Link from "next/link";
 
-const TOKEN_OPTIONS = Object.entries(TOKENS).map(([k, v]) => ({ label: k, value: v as `0x${string}` }));
+// Deposits are in in-game credits; the on-chain depositToken field is just a
+// label, so we pass a fixed marker address.
+const DEPOSIT_LABEL = TOKENS.CELO;
 const MEMBER_OPTIONS = [5, 7, 10, 12, 15];
 const DURATION_OPTIONS = [{ label: "1 week", days: 7 }, { label: "30 days", days: 30 }, { label: "90 days", days: 90 }];
 
 export function MobileCreateGroup() {
   const { isConnected } = useAccount();
-  const [token, setToken] = useState<`0x${string}`>(TOKENS.CELO);
   const [amount, setAmount] = useState("");
   const [maxMembers, setMaxMembers] = useState(10);
   const [roundDays, setRoundDays] = useState(30);
@@ -28,7 +29,7 @@ export function MobileCreateGroup() {
       address: CONTRACTS.groupRegistry,
       abi: GroupRegistryABI,
       functionName: "createGroup",
-      args: [token, parseUnits(amount, 18), BigInt(maxMembers), BigInt(roundDays * 86400), metaURI],
+      args: [DEPOSIT_LABEL, parseUnits(amount, 18), BigInt(maxMembers), BigInt(roundDays * 86400), metaURI],
     });
   }
 
@@ -67,51 +68,25 @@ export function MobileCreateGroup() {
       ) : (
         <div className="px-4 space-y-5 mt-4 pb-8">
 
-          {/* Token */}
-          <div>
-            <p className="text-xs font-semibold text-black/40 uppercase tracking-widest mb-2 px-1">Deposit Token</p>
-            <div className="bg-white rounded-2xl card-shadow overflow-hidden divide-y divide-black/[0.06]">
-              {TOKEN_OPTIONS.map(({ label, value }) => (
-                <button key={value} onClick={() => setToken(value)}
-                  className="w-full flex items-center justify-between px-4 py-4 active:bg-black/5 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                      token === value ? "bg-[#86EFAC] text-[#14532D]" : "bg-[#F2F2F7] text-black/50"}`}>
-                      {label[0]}
-                    </div>
-                    <span className={`font-medium text-sm ${token === value ? "text-black" : "text-black/60"}`}>{label}</span>
-                  </div>
-                  {token === value && (
-                    <div className="w-5 h-5 rounded-full bg-[#16A34A] flex items-center justify-center">
-                      <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                        <path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Amount */}
+          {/* Amount (in credits) */}
           <div>
             <p className="text-xs font-semibold text-black/40 uppercase tracking-widest mb-2 px-1">
-              Deposit Amount <span className="normal-case font-normal">({TOKEN_LABELS[token] ?? "token"} per round)</span>
+              Deposit Amount <span className="normal-case font-normal">({CREDIT_SYMBOL} per round)</span>
             </p>
             <div className="bg-white rounded-2xl card-shadow overflow-hidden">
               <div className="flex items-center px-4">
-                <span className="text-black/30 text-lg font-medium mr-2">{token === TOKENS.USDC || token === TOKENS.USDT ? "$" : "𝐶"}</span>
                 <input
                   type="number"
                   inputMode="decimal"
                   value={amount}
                   onChange={e => setAmount(e.target.value)}
-                  placeholder="0.00"
+                  placeholder="100"
                   className="flex-1 py-4 text-xl font-semibold text-black bg-transparent outline-none placeholder:text-black/20"
                 />
-                <span className="text-black/40 text-sm font-medium">{TOKEN_LABELS[token]}</span>
+                <span className="text-black/40 text-sm font-medium">{CREDIT_SYMBOL}</span>
               </div>
             </div>
+            <p className="text-xs text-black/40 mt-1.5 px-1">Members top up credits with CELO (1 CELO = 1000 {CREDIT_SYMBOL}).</p>
           </div>
 
           {/* Max members */}

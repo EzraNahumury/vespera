@@ -6,6 +6,7 @@ import { useMyGroups } from "@/hooks/useMyGroups";
 import { useReputation } from "@/hooks/useReputation";
 import { filterGroups, groupCounts, GROUP_FILTERS, type GroupFilterMode } from "@/lib/groupFilter";
 import { GroupCard } from "@/components/app/GroupCard";
+import { CreditWallet } from "@/components/app/CreditWallet";
 import { ReputationGauge } from "@/components/ui/ReputationGauge";
 import { SectionLabel, ListCard, ButtonLink } from "@/components/ui/primitives";
 import { ChevronRight, Plus, Search, Wallet, Users, Star, Zap, TrendingUp } from "lucide-react";
@@ -128,6 +129,14 @@ export function MobileDashboard() {
           <Link href="/app/reputation" className="block active:scale-[0.99] transition-transform">
             <ReputationGauge score={score} size={500} />
           </Link>
+        </div>
+      )}
+
+      {/* ── Credit Wallet ── */}
+      {isConnected && (
+        <div className="px-4 mb-6">
+          <SectionLabel>Credit Wallet</SectionLabel>
+          <CreditWallet />
         </div>
       )}
 

@@ -183,7 +183,8 @@ contract ArisanGroup {
 
     // --- Deposits ------------------------------------------------------------
 
-    /// @notice Deposit this round's fixed amount. Caller must first approve the Treasury.
+    /// @notice Pay this round's fixed amount into the group pot from your personal credit
+    ///         balance. Top up credits first via Treasury.deposit() (native CELO @ 1:1000).
     function deposit() external {
         if (!isMember[msg.sender]) revert NotMember();
         uint256 round = currentRound;
@@ -191,7 +192,7 @@ contract ArisanGroup {
 
         depositedInRound[round][msg.sender] = true;
         bool onTime = block.timestamp <= roundDeadline[round];
-        treasury.deposit(depositToken, msg.sender, depositAmount);
+        treasury.payFromCredits(msg.sender, depositAmount);
         reputation.recordDeposit(msg.sender, onTime);
         emit Deposited(round, msg.sender, depositAmount, onTime);
     }
@@ -204,7 +205,7 @@ contract ArisanGroup {
         if (activeRequestId != 0) revert RequestInFlight();
         if (amount == 0) revert InvalidAmount();
         if (receivedInCycle[cycle][msg.sender]) revert AlreadyReceivedThisCycle();
-        if (amount > treasury.balanceOf(address(this), depositToken)) revert InsufficientPot();
+        if (amount > treasury.balanceOf(address(this))) revert InsufficientPot();
 
         id = nextRequestId++;
         _requests[id] = Request({

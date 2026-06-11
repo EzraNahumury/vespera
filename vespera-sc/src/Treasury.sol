@@ -1,37 +1,52 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {ITreasury} from "./interfaces/ITreasury.sol";
 import {IGroupRegistry} from "./interfaces/IGroupRegistry.sol";
 
 /// @title Treasury
-/// @notice Multi-token escrow for ArisanGroup deposits (USDm / USDC / USDT). Funds are credited
-///         per-group and can only be released by the VotingEngine after a vote passes. Uses
-///         SafeERC20 (USDT returns no bool) and the CEI pattern + a reentrancy guard.
+/// @notice In-game credit bank backed 1:1000 by native CELO (Voxel-style). Users deposit native
+///         CELO and receive internal credits (1 CELO = `creditPerCelo` credits) into a PERSONAL
+///         balance that exists independently of any group — they can top up before ever joining
+///         one. Groups pull credits from a member's personal balance into a per-group escrow
+///         ("payment"), and the VotingEngine releases that escrow back into the recipient's
+///         personal balance on a passing vote. Credits are redeemed back to CELO via `withdraw`.
+///         Every credit in circulation is fully covered by CELO held here, so withdrawals are
+///         always solvent as long as nobody is paid out more credits than were ever deposited.
 contract Treasury is ITreasury, Ownable, ReentrancyGuard {
-    using SafeERC20 for IERC20;
-
     IGroupRegistry public groupRegistry;
     address public votingEngine;
 
-    mapping(address token => bool) private _allowed;
-    mapping(address group => mapping(address token => uint256)) private _balances;
+    /// @notice Credits minted per 1 CELO deposited (default 1000). Owner-adjustable like Voxel.
+    /// @dev Credits are an 18-decimal quantity, so 1 CELO (1e18 wei) -> 1000e18 credits ("1000.0").
+    ///      deposit: credits = msg.value * creditPerCelo; withdraw: celo = credits / creditPerCelo.
+    uint256 public creditPerCelo = 1000;
 
-    event TokenAllowed(address indexed token, bool allowed);
+    /// @notice Personal credit balance per user (not tied to any group).
+    mapping(address user => uint256) public creditBalance;
+    /// @notice Escrowed credits held for a group (the rotating-savings pot).
+    mapping(address group => uint256) public groupBalance;
+
+    event CreditPerCeloSet(uint256 creditPerCelo);
     event GroupRegistrySet(address indexed groupRegistry);
     event VotingEngineSet(address indexed votingEngine);
-    event Deposited(address indexed group, address indexed token, address indexed from, uint256 amount);
-    event Released(address indexed group, address indexed token, address indexed to, uint256 amount);
+    event Deposited(address indexed user, uint256 celoIn, uint256 creditsOut);
+    event Withdrawn(address indexed user, uint256 creditsIn, uint256 celoOut);
+    event LiquidityFunded(address indexed from, uint256 celoIn);
+    event Paid(address indexed group, address indexed from, uint256 amount);
+    event Released(address indexed group, address indexed to, uint256 amount);
 
     error NotRegisteredGroup();
     error NotVotingEngine();
-    error TokenNotAllowed();
+    error InsufficientCredits();
     error InsufficientEscrow();
+    error InsufficientLiquidity();
+    error ZeroAmount();
     error ZeroAddress();
+    error InvalidRate();
+    error TransferFailed();
 
     modifier onlyRegisteredGroup() {
         if (address(groupRegistry) == address(0) || !groupRegistry.isRegisteredGroup(msg.sender)) {
@@ -49,10 +64,10 @@ contract Treasury is ITreasury, Ownable, ReentrancyGuard {
 
     // --- Admin ---------------------------------------------------------------
 
-    function allowToken(address token, bool allowed) external onlyOwner {
-        if (token == address(0)) revert ZeroAddress();
-        _allowed[token] = allowed;
-        emit TokenAllowed(token, allowed);
+    function setCreditPerCelo(uint256 newCreditPerCelo) external onlyOwner {
+        if (newCreditPerCelo == 0) revert InvalidRate();
+        creditPerCelo = newCreditPerCelo;
+        emit CreditPerCeloSet(newCreditPerCelo);
     }
 
     function setGroupRegistry(address registry) external onlyOwner {
@@ -67,45 +82,64 @@ contract Treasury is ITreasury, Ownable, ReentrancyGuard {
         emit VotingEngineSet(engine);
     }
 
-    // --- Escrow --------------------------------------------------------------
+    /// @notice Seed extra CELO liquidity without minting credits (covers rounding/headroom).
+    function fundLiquidity() external payable {
+        if (msg.value == 0) revert ZeroAmount();
+        emit LiquidityFunded(msg.sender, msg.value);
+    }
+
+    // --- Personal credits (open to everyone, no group required) --------------
 
     /// @inheritdoc ITreasury
-    function deposit(address token, address from, uint256 amount)
-        external
-        onlyRegisteredGroup
-        nonReentrant
-        returns (uint256 received)
-    {
-        if (!_allowed[token]) revert TokenNotAllowed();
-        IERC20 t = IERC20(token);
-        uint256 balBefore = t.balanceOf(address(this));
-        t.safeTransferFrom(from, address(this), amount);
-        // Credit the amount actually received (robust to fee-on-transfer tokens).
-        received = t.balanceOf(address(this)) - balBefore;
-        _balances[msg.sender][token] += received;
-        emit Deposited(msg.sender, token, from, received);
+    function deposit() external payable {
+        if (msg.value == 0) revert ZeroAmount();
+        uint256 credited = msg.value * creditPerCelo;
+        creditBalance[msg.sender] += credited;
+        emit Deposited(msg.sender, msg.value, credited);
     }
 
     /// @inheritdoc ITreasury
-    function release(address group, address token, address to, uint256 amount)
-        external
-        onlyVotingEngine
-        nonReentrant
-    {
-        uint256 bal = _balances[group][token];
+    function withdraw(uint256 credits) external nonReentrant {
+        if (credits == 0) revert ZeroAmount();
+        uint256 bal = creditBalance[msg.sender];
+        if (credits > bal) revert InsufficientCredits();
+
+        uint256 celoOut = credits / creditPerCelo;
+        if (celoOut == 0) revert ZeroAmount(); // dust below 1 wei of CELO
+        if (address(this).balance < celoOut) revert InsufficientLiquidity();
+
+        creditBalance[msg.sender] = bal - credits; // effects (CEI)
+        emit Withdrawn(msg.sender, credits, celoOut);
+
+        (bool ok,) = payable(msg.sender).call{value: celoOut}("");
+        if (!ok) revert TransferFailed();
+    }
+
+    // --- Group escrow (credits only, no token transfers) ---------------------
+
+    /// @inheritdoc ITreasury
+    function payFromCredits(address from, uint256 amount) external onlyRegisteredGroup nonReentrant {
+        if (amount == 0) revert ZeroAmount();
+        uint256 bal = creditBalance[from];
+        if (bal < amount) revert InsufficientCredits();
+        creditBalance[from] = bal - amount;
+        groupBalance[msg.sender] += amount;
+        emit Paid(msg.sender, from, amount);
+    }
+
+    /// @inheritdoc ITreasury
+    function release(address group, address to, uint256 amount) external onlyVotingEngine nonReentrant {
+        uint256 bal = groupBalance[group];
         if (bal < amount) revert InsufficientEscrow();
-        _balances[group][token] = bal - amount; // effects before interaction (CEI)
-        IERC20(token).safeTransfer(to, amount);
-        emit Released(group, token, to, amount);
+        groupBalance[group] = bal - amount; // effects before crediting (CEI)
+        creditBalance[to] += amount;
+        emit Released(group, to, amount);
     }
 
     // --- Views ---------------------------------------------------------------
 
-    function balanceOf(address group, address token) external view returns (uint256) {
-        return _balances[group][token];
-    }
-
-    function isAllowedToken(address token) external view returns (bool) {
-        return _allowed[token];
+    /// @inheritdoc ITreasury
+    function balanceOf(address group) external view returns (uint256) {
+        return groupBalance[group];
     }
 }

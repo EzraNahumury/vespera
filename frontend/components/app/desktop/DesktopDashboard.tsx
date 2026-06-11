@@ -6,6 +6,7 @@ import { useMyGroups } from "@/hooks/useMyGroups";
 import { useReputation } from "@/hooks/useReputation";
 import { filterGroups, groupCounts, GROUP_FILTERS, type GroupFilterMode } from "@/lib/groupFilter";
 import { GroupCard } from "@/components/app/GroupCard";
+import { CreditWallet } from "@/components/app/CreditWallet";
 import { ReputationGauge } from "@/components/ui/ReputationGauge";
 import { SectionLabel, ButtonLink } from "@/components/ui/primitives";
 import { Search, Plus, Users, Wallet, Star, TrendingUp, Zap, ChevronRight } from "lucide-react";
@@ -162,6 +163,14 @@ export function DesktopDashboard() {
             ))}
           </div>
         </div>
+
+        {/* ── Credit Wallet ── */}
+        {isConnected && (
+          <div className="mb-10 max-w-md">
+            <SectionLabel>Credit Wallet</SectionLabel>
+            <CreditWallet />
+          </div>
+        )}
 
         {/* ── Groups Section ── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">

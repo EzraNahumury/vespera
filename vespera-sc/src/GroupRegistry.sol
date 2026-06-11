@@ -57,7 +57,8 @@ contract GroupRegistry is IGroupRegistry, Ownable {
         agentRegistry = agentRegistry_;
     }
 
-    /// @notice Deploy a new ArisanGroup with a fixed deposit token (must be Treasury-allowed).
+    /// @notice Deploy a new ArisanGroup. `depositAmount` is denominated in in-game credits;
+    ///         `depositToken` is a free-form label kept for display/metadata only.
     function createGroup(
         address depositToken,
         uint256 depositAmount,
@@ -65,7 +66,6 @@ contract GroupRegistry is IGroupRegistry, Ownable {
         uint256 roundDuration,
         string calldata metadataURI
     ) external returns (address group) {
-        if (!ITreasury(treasury).isAllowedToken(depositToken)) revert TokenNotAllowed();
         if (maxMembers < VesperaConstants.MIN_MEMBERS || maxMembers > VesperaConstants.MAX_MEMBERS) {
             revert BadMemberBounds();
         }

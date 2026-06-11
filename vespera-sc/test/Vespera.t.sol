@@ -11,7 +11,6 @@ import {GroupRegistry} from "../src/GroupRegistry.sol";
 import {ArisanGroup} from "../src/ArisanGroup.sol";
 import {VesperaTypes} from "../src/libraries/VesperaTypes.sol";
 import {MockERC20} from "./mocks/MockERC20.sol";
-import {MockNoReturnToken} from "./mocks/MockNoReturnToken.sol";
 
 contract VesperaTest is Test {
     // Protocol
@@ -22,8 +21,8 @@ contract VesperaTest is Test {
     VotingEngine voting;
     GroupRegistry registry;
 
-    // Tokens
-    MockERC20 usdm;
+    // A dummy ERC-20 used only as a free-form deposit-token *label* (no transfers happen).
+    MockERC20 label;
 
     // Actors (plain wallet addresses — membership is invite-by-address on Celo)
     address admin = address(this);
@@ -34,7 +33,8 @@ contract VesperaTest is Test {
     address walletC = makeAddr("walletC");
     address walletD = makeAddr("walletD");
 
-    uint256 constant DEPOSIT = 100e18;
+    // Amounts are denominated in in-game CREDITS, an 18-decimal quantity (1 CELO = 1000 credits).
+    uint256 constant DEPOSIT = 100e18; // 100 credits per round
     uint256 constant ROUND = 7 days;
 
     function setUp() public {
@@ -57,16 +57,14 @@ contract VesperaTest is Test {
         badge.grantRole(badge.MINTER_ROLE(), address(reputation));
         voting.grantRole(voting.AGENT_ROLE(), agent);
 
-        // Token + allow.
-        usdm = new MockERC20("Mento Dollar", "USDm", 18);
-        treasury.allowToken(address(usdm), true);
+        label = new MockERC20("Credit", "CR", 18);
 
-        // Fund + approve wallets.
+        // Fund every wallet with credits: deal native CELO, then deposit 10 CELO -> 10_000 credits.
         address[5] memory ws = _wallets();
         for (uint256 i; i < ws.length; i++) {
-            usdm.mint(ws[i], 1_000_000e18);
+            vm.deal(ws[i], 100 ether);
             vm.prank(ws[i]);
-            usdm.approve(address(treasury), type(uint256).max);
+            treasury.deposit{value: 10 ether}();
         }
     }
 
@@ -79,7 +77,7 @@ contract VesperaTest is Test {
     /// @dev Creator deploys the group, invites the four wallets, each accepts via join().
     function _newGroup() internal returns (ArisanGroup g) {
         vm.prank(creator);
-        address ga = registry.createGroup(address(usdm), DEPOSIT, 5, ROUND, "ipfs://meta");
+        address ga = registry.createGroup(address(label), DEPOSIT, 5, ROUND, "ipfs://meta");
         g = ArisanGroup(ga);
 
         address[4] memory invitees = [walletA, walletB, walletC, walletD];
@@ -115,40 +113,73 @@ contract VesperaTest is Test {
         }
     }
 
+    // --- Personal credit deposit / withdraw (the new core) -------------------
+
+    function test_Deposit_NativeCelo_MintsCredits_AtOneToThousand() public {
+        // The new rule: anyone can top up credits, even before joining any group.
+        address newbie = makeAddr("newbie");
+        vm.deal(newbie, 5 ether);
+        vm.prank(newbie);
+        treasury.deposit{value: 2 ether}();
+        assertEq(treasury.creditBalance(newbie), 2000 ether); // 2 CELO -> 2000.0 credits
+    }
+
+    function test_Deposit_RevertsOnZeroValue() public {
+        vm.deal(walletA, 1 ether);
+        vm.prank(walletA);
+        vm.expectRevert(Treasury.ZeroAmount.selector);
+        treasury.deposit{value: 0}();
+    }
+
+    function test_Withdraw_RedeemsCreditsToCelo() public {
+        address u = makeAddr("u");
+        vm.deal(u, 10 ether);
+        vm.prank(u);
+        treasury.deposit{value: 3 ether}(); // 3000 credits
+        assertEq(treasury.creditBalance(u), 3000 ether);
+
+        uint256 balBefore = u.balance;
+        vm.prank(u);
+        treasury.withdraw(1000 ether); // 1000 credits -> 1 CELO
+
+        assertEq(treasury.creditBalance(u), 2000 ether);
+        assertEq(u.balance, balBefore + 1 ether);
+    }
+
+    function test_Withdraw_RevertsOnInsufficientCredits() public {
+        uint256 tooMuch = treasury.creditBalance(walletA) + 1;
+        vm.prank(walletA);
+        vm.expectRevert(Treasury.InsufficientCredits.selector);
+        treasury.withdraw(tooMuch);
+    }
+
     // --- Group creation & membership ----------------------------------------
 
     function test_CreateGroup_SeatsCreatorAsMember() public {
         vm.prank(creator);
-        address ga = registry.createGroup(address(usdm), DEPOSIT, 5, ROUND, "ipfs://meta");
+        address ga = registry.createGroup(address(label), DEPOSIT, 5, ROUND, "ipfs://meta");
         ArisanGroup g = ArisanGroup(ga);
 
         assertTrue(registry.isRegisteredGroup(ga));
         assertEq(registry.groupCreator(ga), creator);
         assertTrue(g.isMember(creator));
         assertEq(g.memberCount(), 1);
-        assertEq(g.depositToken(), address(usdm));
+        assertEq(g.depositToken(), address(label));
         assertEq(g.currentRound(), 1);
-    }
-
-    function test_CreateGroup_RevertsOnDisallowedToken() public {
-        MockERC20 rogue = new MockERC20("Rogue", "RGE", 18);
-        vm.prank(creator);
-        vm.expectRevert(GroupRegistry.TokenNotAllowed.selector);
-        registry.createGroup(address(rogue), DEPOSIT, 5, ROUND, "x");
     }
 
     function test_CreateGroup_RevertsOnBadMemberBounds() public {
         vm.prank(creator);
         vm.expectRevert(GroupRegistry.BadMemberBounds.selector);
-        registry.createGroup(address(usdm), DEPOSIT, 4, ROUND, "x"); // < MIN_MEMBERS
+        registry.createGroup(address(label), DEPOSIT, 4, ROUND, "x"); // < MIN_MEMBERS
         vm.prank(creator);
         vm.expectRevert(GroupRegistry.BadMemberBounds.selector);
-        registry.createGroup(address(usdm), DEPOSIT, 16, ROUND, "x"); // > MAX_MEMBERS
+        registry.createGroup(address(label), DEPOSIT, 16, ROUND, "x"); // > MAX_MEMBERS
     }
 
     function test_Invite_OnlyCreator() public {
         vm.prank(creator);
-        address ga = registry.createGroup(address(usdm), DEPOSIT, 5, ROUND, "x");
+        address ga = registry.createGroup(address(label), DEPOSIT, 5, ROUND, "x");
         ArisanGroup g = ArisanGroup(ga);
 
         vm.prank(walletA); // not the creator
@@ -158,7 +189,7 @@ contract VesperaTest is Test {
 
     function test_Join_RevertsIfNotInvited() public {
         vm.prank(creator);
-        address ga = registry.createGroup(address(usdm), DEPOSIT, 5, ROUND, "x");
+        address ga = registry.createGroup(address(label), DEPOSIT, 5, ROUND, "x");
         ArisanGroup g = ArisanGroup(ga);
 
         vm.prank(walletA); // never invited
@@ -183,19 +214,39 @@ contract VesperaTest is Test {
         g.join();
     }
 
-    // --- Deposits ------------------------------------------------------------
+    // --- Group payment (debits personal credits) -----------------------------
 
     function test_Deposit_EscrowsAndScores() public {
         ArisanGroup g = _newGroup();
+        uint256 creditsBefore = treasury.creditBalance(walletA);
+
         vm.prank(walletA);
         g.deposit();
 
-        assertEq(treasury.balanceOf(address(g), address(usdm)), DEPOSIT);
+        assertEq(treasury.balanceOf(address(g)), DEPOSIT);
+        assertEq(treasury.creditBalance(walletA), creditsBefore - DEPOSIT);
         assertTrue(g.depositedInRound(1, walletA));
         // walletA: deposit 1/1 (400) + penalty-free (50) ~= 450 => Silver tier.
         uint256 s = reputation.scoreOf(walletA);
         assertApproxEqAbs(s, 450, 1);
         assertEq(reputation.tierOf(walletA), 1); // Silver
+    }
+
+    function test_Deposit_RevertsOnInsufficientCredits() public {
+        // A non-full group whose fresh member never topped up credits cannot pay into the pot.
+        vm.prank(creator);
+        address ga = registry.createGroup(address(label), DEPOSIT, 5, ROUND, "x");
+        ArisanGroup g = ArisanGroup(ga);
+
+        address poor = makeAddr("poor");
+        vm.prank(creator);
+        g.invite(poor);
+        vm.prank(poor);
+        g.join();
+
+        vm.prank(poor);
+        vm.expectRevert(Treasury.InsufficientCredits.selector);
+        g.deposit();
     }
 
     function test_Deposit_RevertsOnDoubleDepositSameRound() public {
@@ -212,9 +263,9 @@ contract VesperaTest is Test {
     function test_HappyPath_FastTrack_Payout() public {
         ArisanGroup g = _newGroup();
         _depositAll(g);
-        assertEq(treasury.balanceOf(address(g), address(usdm)), 5 * DEPOSIT);
+        assertEq(treasury.balanceOf(address(g)), 5 * DEPOSIT);
 
-        uint256 creatorBefore = usdm.balanceOf(creator);
+        uint256 creatorCreditsBefore = treasury.creditBalance(creator);
 
         vm.prank(creator);
         uint256 id = g.requestWithdrawal(300e18, "medical");
@@ -230,9 +281,9 @@ contract VesperaTest is Test {
 
         voting.finalize(address(g), id);
 
-        // Payout released to requester.
-        assertEq(usdm.balanceOf(creator), creatorBefore + 300e18);
-        assertEq(treasury.balanceOf(address(g), address(usdm)), 5 * DEPOSIT - 300e18);
+        // Payout released into the requester's personal credit balance.
+        assertEq(treasury.creditBalance(creator), creatorCreditsBefore + 300e18);
+        assertEq(treasury.balanceOf(address(g)), 5 * DEPOSIT - 300e18);
 
         (,,, VesperaTypes.RequestStatus st) = g.getRequest(id);
         assertEq(uint256(st), uint256(VesperaTypes.RequestStatus.Executed));
@@ -376,88 +427,25 @@ contract VesperaTest is Test {
         g.requestWithdrawal(100e18, "again");
     }
 
-    // --- SafeERC20 / USDT-style token ---------------------------------------
+    // --- End-to-end: deposit CELO -> pay -> payout -> withdraw CELO ----------
 
-    function test_SafeERC20_NoReturnToken_FullFlow() public {
-        MockNoReturnToken usdt = new MockNoReturnToken();
-        treasury.allowToken(address(usdt), true);
+    function test_FullRoundTrip_CeloToCreditsToPayoutToCelo() public {
+        ArisanGroup g = _newGroup();
+        _depositAll(g); // pot = 500 credits
 
-        address[5] memory ws = _wallets();
-        for (uint256 i; i < ws.length; i++) {
-            usdt.mint(ws[i], 1_000_000e6);
-            vm.prank(ws[i]);
-            usdt.approve(address(treasury), type(uint256).max);
-        }
-
-        vm.prank(creator);
-        address ga = registry.createGroup(address(usdt), 100e6, 5, ROUND, "ipfs://usdt");
-        ArisanGroup g = ArisanGroup(ga);
-        address[4] memory invitees = [walletA, walletB, walletC, walletD];
-        vm.prank(creator);
-        g.inviteBatch(_toDynamic(invitees));
-        for (uint256 i; i < invitees.length; i++) {
-            vm.prank(invitees[i]);
-            g.join();
-        }
-
-        for (uint256 i; i < ws.length; i++) {
-            vm.prank(ws[i]);
-            g.deposit();
-        }
-        assertEq(treasury.balanceOf(ga, address(usdt)), 5 * 100e6);
-
-        uint256 before = usdt.balanceOf(creator);
-        vm.prank(creator);
-        uint256 id = g.requestWithdrawal(250e6, "school fees");
-        vm.prank(agent);
-        voting.initVote(ga, id, 9000);
-        _voteAllExcept(g, id, creator, true);
-        voting.finalize(ga, id);
-
-        assertEq(usdt.balanceOf(creator), before + 250e6);
-    }
-
-    // --- CELO as a deposit token (ERC-20 adapter on Celo) --------------------
-
-    function test_Celo_AsDepositToken_FullFlow() public {
-        // On Celo, native CELO is also exposed as a standard ERC-20 (0x471EcE37...). Native and
-        // ERC-20 balances are unified, so it deposits via approve+transferFrom like any token.
-        // A standard ERC-20 mock models that adapter here.
-        MockERC20 celo = new MockERC20("Celo native asset", "CELO", 18);
-        treasury.allowToken(address(celo), true);
-
-        address[5] memory ws = _wallets();
-        for (uint256 i; i < ws.length; i++) {
-            celo.mint(ws[i], 1_000e18);
-            vm.prank(ws[i]);
-            celo.approve(address(treasury), type(uint256).max);
-        }
-
-        vm.prank(creator);
-        address ga = registry.createGroup(address(celo), 10e18, 5, ROUND, "ipfs://celo");
-        ArisanGroup g = ArisanGroup(ga);
-        address[4] memory invitees = [walletA, walletB, walletC, walletD];
-        vm.prank(creator);
-        g.inviteBatch(_toDynamic(invitees));
-        for (uint256 i; i < invitees.length; i++) {
-            vm.prank(invitees[i]);
-            g.join();
-        }
-        for (uint256 i; i < ws.length; i++) {
-            vm.prank(ws[i]);
-            g.deposit();
-        }
-        assertEq(treasury.balanceOf(ga, address(celo)), 5 * 10e18);
-
-        uint256 before = celo.balanceOf(walletA);
+        // walletA wins a 300-credit payout.
         vm.prank(walletA);
-        uint256 id = g.requestWithdrawal(30e18, "celo payout");
+        uint256 id = g.requestWithdrawal(300e18, "celo payout");
         vm.prank(agent);
-        voting.initVote(ga, id, 9000);
+        voting.initVote(address(g), id, 9000);
         _voteAllExcept(g, id, walletA, true);
-        voting.finalize(ga, id);
+        voting.finalize(address(g), id);
 
-        assertEq(celo.balanceOf(walletA), before + 30e18);
+        // The payout credits can be redeemed back to native CELO.
+        uint256 balBefore = walletA.balance;
+        vm.prank(walletA);
+        treasury.withdraw(300e18); // 300 credits -> 0.3 CELO
+        assertEq(walletA.balance, balBefore + 0.3 ether);
     }
 
     // --- Access control ------------------------------------------------------
@@ -478,14 +466,14 @@ contract VesperaTest is Test {
         _depositAll(g);
         vm.prank(walletA);
         vm.expectRevert(Treasury.NotVotingEngine.selector);
-        treasury.release(address(g), address(usdm), walletA, 1e18);
+        treasury.release(address(g), walletA, 1);
     }
 
-    function test_AccessControl_DepositOnlyRegisteredGroup() public {
-        // A random address calling treasury.deposit is not a registered group.
+    function test_AccessControl_PayFromCreditsOnlyRegisteredGroup() public {
+        // A random address calling treasury.payFromCredits is not a registered group.
         vm.prank(walletA);
         vm.expectRevert(Treasury.NotRegisteredGroup.selector);
-        treasury.deposit(address(usdm), walletA, DEPOSIT);
+        treasury.payFromCredits(walletA, DEPOSIT);
     }
 
     function test_AccessControl_MarkVotingOnlyVotingEngine() public {

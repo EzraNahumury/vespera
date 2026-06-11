@@ -168,7 +168,7 @@ contract VotingEngine is IVotingEngine, AccessControl, ReentrancyGuard {
         _recordParticipation(group, _key(group, requestId), v.requester, passed);
 
         if (passed) {
-            treasury.release(group, v.token, v.requester, v.amount);
+            treasury.release(group, v.requester, v.amount);
             IArisanGroup(group).markExecuted(requestId);
             v.status = VesperaTypes.VoteStatus.Executed;
         } else {
