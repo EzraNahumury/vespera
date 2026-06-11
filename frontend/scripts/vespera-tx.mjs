@@ -108,6 +108,11 @@ const TREASURY_ABI = [
     outputs: [{ name: "", type: "uint256" }],
     stateMutability: "view",
   },
+  // SC baru pakai model kredit internal: bayar CELO ke Treasury → dapat kredit
+  // (1 CELO = creditPerCelo kredit). ArisanGroup.deposit() menarik dari kredit ini.
+  { type: "function", name: "deposit", inputs: [], outputs: [], stateMutability: "payable" },
+  { type: "function", name: "creditBalance", inputs: [{ name: "user", type: "address" }], outputs: [{ name: "", type: "uint256" }], stateMutability: "view" },
+  { type: "function", name: "creditPerCelo", inputs: [], outputs: [{ name: "", type: "uint256" }], stateMutability: "view" },
 ];
 
 const VOTING_ENGINE_ABI = [
@@ -493,10 +498,9 @@ async function deposit(group) {
   if (!signerAddress) die("deposit needs PRIVATE_KEY or SIGNER_ADDRESS.");
   await assertRegistered(group);
 
-  const [isMember, currentRound, token, amount] = await Promise.all([
+  const [isMember, currentRound, amount] = await Promise.all([
     publicClient.readContract({ address: group, abi: ARISAN_GROUP_ABI, functionName: "isMember", args: [signerAddress] }),
     publicClient.readContract({ address: group, abi: ARISAN_GROUP_ABI, functionName: "currentRound" }),
-    publicClient.readContract({ address: group, abi: ARISAN_GROUP_ABI, functionName: "depositToken" }),
     publicClient.readContract({ address: group, abi: ARISAN_GROUP_ABI, functionName: "depositAmount" }),
   ]);
   if (!isMember) {
@@ -515,30 +519,35 @@ async function deposit(group) {
     return;
   }
 
-  const [meta, balance, allowance] = await Promise.all([
-    readTokenMeta(token),
-    publicClient.readContract({ address: token, abi: ERC20_ABI, functionName: "balanceOf", args: [signerAddress] }),
-    publicClient.readContract({
-      address: token,
-      abi: ERC20_ABI,
-      functionName: "allowance",
-      args: [signerAddress, CONTRACTS.treasury],
-    }),
+  // SC baru = model kredit: ArisanGroup.deposit() menarik `amount` (unit kredit) via
+  // treasury.payFromCredits. Member harus punya creditBalance >= amount; kalau kurang,
+  // beli kredit dulu lewat Treasury.deposit{value} (credits = value * creditPerCelo).
+  const [creditBalance, creditPerCelo] = await Promise.all([
+    publicClient.readContract({ address: CONTRACTS.treasury, abi: TREASURY_ABI, functionName: "creditBalance", args: [signerAddress] }),
+    publicClient.readContract({ address: CONTRACTS.treasury, abi: TREASURY_ABI, functionName: "creditPerCelo" }),
   ]);
 
-  info(`deposit ${short(group)}: needs ${formatUnits(amount, meta.decimals)} ${meta.symbol}`);
-  if (balance < amount) {
-    info(`deposit ${short(group)}: skipped (balance ${formatUnits(balance, meta.decimals)} ${meta.symbol})`);
-    return;
-  }
+  info(`deposit ${short(group)}: butuh ${amount} kredit (saldo kredit ${creditBalance})`);
 
-  if (allowance < amount) {
-    await sendContract(`approve ${meta.symbol} to Treasury`, {
-      address: token,
-      abi: ERC20_ABI,
-      functionName: "approve",
-      args: [CONTRACTS.treasury, MAX_UINT256],
+  if (creditBalance < amount) {
+    const needCredits = amount - creditBalance;
+    // value CELO minimal agar credits>=needCredits → ceil(needCredits / creditPerCelo).
+    const buyValue = (needCredits + creditPerCelo - 1n) / creditPerCelo || 1n;
+    const nativeBal = await publicClient.getBalance({ address: signerAddress });
+    if (nativeBal < buyValue) {
+      info(`deposit ${short(group)}: skipped (native ${formatUnits(nativeBal, 18)} CELO < beli kredit ${formatUnits(buyValue, 18)} CELO)`);
+      return;
+    }
+    const bought = await sendContract(`buy credits ${formatUnits(buyValue, 18)} CELO for ${short(group)}`, {
+      address: CONTRACTS.treasury,
+      abi: TREASURY_ABI,
+      functionName: "deposit",
+      value: buyValue,
     });
+    if (!dryRun && bought === null) {
+      info(`deposit ${short(group)}: aborted (beli kredit gagal)`);
+      return;
+    }
     if (!dryRun) await new Promise((r) => setTimeout(r, 2_000));
   }
 
