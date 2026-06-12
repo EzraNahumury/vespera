@@ -46,9 +46,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
+      # npm ci gagal karena package-lock.json drift (masalah repo lama) — pakai install toleran.
+      - run: npm install --legacy-peer-deps
       - name: Run Vespera DAU credits engine
         env:
           RPC_URL: ${{ secrets.CELO_RPC_URL || vars.CELO_RPC_URL || 'https://forno.celo.org' }}
