@@ -1,0 +1,69 @@
+name: Vespera MAINNET - DAU credits engine
+
+# Engine DAU + tx Vespera yang BENAR untuk SC baru (model kredit).
+# Tiap wallet aktif memanggil Treasury.deposit (beli kredit) — interaksi nyata ke
+# Treasury 0xe0F5…, tanpa butuh group/join-window. Cohort+circadian deterministik
+# per (tanggal, jam) → 24 run/hari tidak bentrok. Lihat scripts/vespera-dau-cron.mjs.
+#
+# Setup sekali:
+#   1. node scripts/vespera-wallets-gen.mjs              # 100 wallet baru (lokal)
+#   2. gh secret set VESPERA_DAU_WALLETS < frontend/vespera-dau-wallets.json -R <repo>
+#   3. pastikan secret VESPERA_FUNDER_PRIVATE_KEY ada (untuk prefund gas)
+
+on:
+  schedule:
+    - cron: "5 * * * *"      # tiap jam (UTC; best-effort)
+    - cron: "35 * * * *"     # 2x/jam supaya jam tidak ke-skip GitHub
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Simulasi saja (tanpa kirim tx)."
+        required: true
+        default: true
+        type: boolean
+      dau_target:
+        description: "Wallet unik aktif/hari."
+        required: false
+        default: "20"
+        type: string
+
+concurrency:
+  group: vespera-dau-credits
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  dau:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Run Vespera DAU credits engine
+        env:
+          RPC_URL: ${{ secrets.CELO_RPC_URL || vars.CELO_RPC_URL || 'https://forno.celo.org' }}
+          NEXT_PUBLIC_TREASURY: ${{ vars.NEXT_PUBLIC_TREASURY || '0xe0F543010FbAc613a6550E19Da6a680173Cf9009' }}
+          # Wallet khusus DAU (JSON {wallets:[...]}) — set via: gh secret set VESPERA_DAU_WALLETS < vespera-dau-wallets.json
+          VESPERA_DAU_WALLETS: ${{ secrets.VESPERA_DAU_WALLETS }}
+          # Funder untuk prefund gas wallet aktif (opsional tapi disarankan).
+          FUNDER_PRIVATE_KEY: ${{ secrets.VESPERA_FUNDER_PRIVATE_KEY }}
+          # Default live tiap jam; override manual via workflow_dispatch.
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && format('{0}', inputs.dry_run) || vars.VESPERA_DAU_CREDITS_DRY_RUN || '0' }}
+          DAU_TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.dau_target || vars.VESPERA_DAU_CREDITS_TARGET || '20' }}
+          TX_MIN: ${{ vars.VESPERA_DAU_CREDITS_TX_MIN || '4' }}
+          TX_MAX: ${{ vars.VESPERA_DAU_CREDITS_TX_MAX || '10' }}
+          BUY_VALUE_CELO: ${{ vars.VESPERA_DAU_CREDITS_BUY_VALUE || '0.0002' }}
+          PREFUND_MIN_CELO: ${{ vars.VESPERA_DAU_CREDITS_PREFUND_MIN || '0.02' }}
+          PREFUND_TARGET_CELO: ${{ vars.VESPERA_DAU_CREDITS_PREFUND_TARGET || '0.05' }}
+          CONCURRENCY: ${{ vars.VESPERA_DAU_CREDITS_CONCURRENCY || '6' }}
+        run: npm run vespera:dau

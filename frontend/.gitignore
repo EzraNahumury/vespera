@@ -24,6 +24,12 @@
 .DS_Store
 *.pem
 
+# wallet keys — NEVER commit (private keys)
+vespera-dau-wallets.json
+wallets/
+*.secret.json
+scripts/_run*.mjs
+
 # debug
 npm-debug.log*
 yarn-debug.log*
