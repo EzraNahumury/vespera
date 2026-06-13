@@ -1,0 +1,58 @@
+{
+  "name": "@vespera/sdk",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for the Vespera arisan (ROSCA) protocol on Celo — typed contract ABIs, mainnet addresses, chain config, and agent policy metadata.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean --treeshake",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "viem": "^2"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5",
+    "viem": "^2.52.0"
+  },
+  "keywords": [
+    "celo",
+    "rosca",
+    "arisan",
+    "defi",
+    "stablecoin",
+    "viem",
+    "web3",
+    "vespera"
+  ],
+  "license": "MIT",
+  "author": "Vespera",
+  "homepage": "https://vespera-celo.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/secondio10/vespera.git",
+    "directory": "frontend/packages/sdk"
+  },
+  "bugs": {
+    "url": "https://github.com/secondio10/vespera/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
