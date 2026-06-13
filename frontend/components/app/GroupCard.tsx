@@ -1,6 +1,6 @@
 "use client";
 import { useReadContracts } from "wagmi";
-import { ArisanGroupABI } from "@/abis/ArisanGroup";
+import { ArisanGroupABI } from "vespera-sdk";
 import { TOKEN_LABELS } from "@/lib/chain";
 import { ChevronRight } from "lucide-react";
 import { formatUnits } from "viem";

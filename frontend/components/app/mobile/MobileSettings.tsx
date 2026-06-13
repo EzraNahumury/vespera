@@ -2,8 +2,7 @@
 import { useState } from "react";
 import { useAccount, useDisconnect, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { CONTRACTS } from "@/lib/chain";
-import { AgentRegistryABI } from "@/abis/AgentRegistry";
-import { AGENT_TYPES, AgentType } from "@/lib/agentTypes";
+import { AgentRegistryABI, AGENT_TYPES, AgentType } from "vespera-sdk";
 import { Check, Loader2, Copy, ChevronRight, ExternalLink, LogOut, GitBranch, Shield, Zap, Scale } from "lucide-react";
 import Link from "next/link";
 

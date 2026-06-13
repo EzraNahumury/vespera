@@ -1,7 +1,7 @@
 "use client";
 import { useReadContracts } from "wagmi";
 import { CONTRACTS } from "@/lib/chain";
-import { ReputationRegistryABI } from "@/abis/ReputationRegistry";
+import { ReputationRegistryABI } from "vespera-sdk";
 
 export function useReputation(address?: `0x${string}`) {
   return useReadContracts({

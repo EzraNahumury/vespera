@@ -1,7 +1,7 @@
 "use client";
 import { useReadContract } from "wagmi";
 import { CONTRACTS } from "@/lib/chain";
-import { GroupRegistryABI } from "@/abis/GroupRegistry";
+import { GroupRegistryABI } from "vespera-sdk";
 
 export function useAllGroups() {
   return useReadContract({

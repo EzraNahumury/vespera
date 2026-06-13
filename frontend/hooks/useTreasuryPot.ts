@@ -1,7 +1,7 @@
 "use client";
 import { useReadContract } from "wagmi";
 import { formatUnits } from "viem";
-import { TreasuryABI } from "@/abis/Treasury";
+import { TreasuryABI } from "vespera-sdk";
 import { CONTRACTS } from "@/lib/chain";
 
 /**

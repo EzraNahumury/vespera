@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useReadContract } from "wagmi";
-import { VotingEngineABI } from "@/abis/VotingEngine";
+import { VotingEngineABI } from "vespera-sdk";
 import { CONTRACTS } from "@/lib/chain";
 
 function fmtRemaining(secs: number) {

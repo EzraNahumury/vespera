@@ -2,9 +2,7 @@
 import { useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
 import { formatUnits, isAddress } from "viem";
 import { useEffect, useState } from "react";
-import { ArisanGroupABI } from "@/abis/ArisanGroup";
-import { ERC20ABI } from "@/abis/ERC20";
-import { VotingEngineABI } from "@/abis/VotingEngine";
+import { ArisanGroupABI, ERC20ABI, VotingEngineABI } from "vespera-sdk";
 import { TOKEN_LABELS, CONTRACTS } from "@/lib/chain";
 import { VoteStatus } from "@/components/app/VoteStatus";
 import { DepositPanel } from "@/components/app/DepositPanel";

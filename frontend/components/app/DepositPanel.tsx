@@ -1,8 +1,7 @@
 "use client";
 import { useEffect } from "react";
 import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { ArisanGroupABI } from "@/abis/ArisanGroup";
-import { ERC20ABI } from "@/abis/ERC20";
+import { ArisanGroupABI, ERC20ABI } from "vespera-sdk";
 import { useDepositGate } from "@/hooks/useDepositGate";
 import { useToast } from "@/components/ui/Toast";
 import { Loader, AlertTriangle, ShieldCheck } from "lucide-react";

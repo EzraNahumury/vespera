@@ -1,7 +1,7 @@
 "use client";
 import { useReadContracts } from "wagmi";
 import { CONTRACTS, BADGE_LABELS } from "@/lib/chain";
-import { BadgeNFTABI } from "@/abis/BadgeNFT";
+import { BadgeNFTABI } from "vespera-sdk";
 
 /**
  * Reads soulbound-badge ownership for every badge type for the given account.

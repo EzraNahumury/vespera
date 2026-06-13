@@ -1,6 +1,6 @@
 "use client";
 import { useReadContract } from "wagmi";
-import { ERC20ABI } from "@/abis/ERC20";
+import { ERC20ABI } from "vespera-sdk";
 
 /**
  * Reads the ERC-20 allowance an owner has granted to a spender.

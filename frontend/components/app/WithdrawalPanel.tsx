@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { parseUnits } from "viem";
-import { ArisanGroupABI } from "@/abis/ArisanGroup";
+import { ArisanGroupABI } from "vespera-sdk";
 import { useTreasuryPot } from "@/hooks/useTreasuryPot";
 import { useToast } from "@/components/ui/Toast";
 import { Loader, AlertTriangle } from "lucide-react";

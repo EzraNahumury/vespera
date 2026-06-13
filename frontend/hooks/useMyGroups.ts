@@ -1,8 +1,7 @@
 "use client";
 import { useReadContracts, useAccount } from "wagmi";
 import { CONTRACTS } from "@/lib/chain";
-import { GroupRegistryABI } from "@/abis/GroupRegistry";
-import { ArisanGroupABI } from "@/abis/ArisanGroup";
+import { GroupRegistryABI, ArisanGroupABI } from "vespera-sdk";
 
 export type GroupRel = { created: boolean; joined: boolean };
 

@@ -1,7 +1,7 @@
 "use client";
 import { useReadContracts } from "wagmi";
 import { formatUnits } from "viem";
-import { ERC20ABI } from "@/abis/ERC20";
+import { ERC20ABI } from "vespera-sdk";
 
 /**
  * Gates an ArisanGroup deposit: reads the member's token balance + the

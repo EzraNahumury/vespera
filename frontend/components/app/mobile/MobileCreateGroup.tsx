@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
 import { parseUnits } from "viem";
 import { CONTRACTS, TOKENS, TOKEN_LABELS } from "@/lib/chain";
-import { GroupRegistryABI } from "@/abis/GroupRegistry";
+import { GroupRegistryABI } from "vespera-sdk";
 import { CheckCircle2, Loader2, ChevronLeft } from "lucide-react";
 import Link from "next/link";
 
