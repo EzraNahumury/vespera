@@ -1,4 +1,4 @@
-# @vespera/sdk
+# vespera-sdk
 
 TypeScript SDK for the **Vespera** arisan (ROSCA) protocol on **Celo** — a trustless, AI-governed rotating savings protocol where members pool stablecoins, take turns receiving payouts, and build on-chain reputation.
 
@@ -14,7 +14,7 @@ It is **framework-free** — `viem` is the only peer dependency.
 ## Install
 
 ```bash
-npm install @vespera/sdk viem
+npm install vespera-sdk viem
 ```
 
 ## Usage
@@ -23,7 +23,7 @@ npm install @vespera/sdk viem
 
 ```ts
 import { createPublicClient, http } from "viem";
-import { celo, CONTRACTS, GroupRegistryABI, ArisanGroupABI } from "@vespera/sdk";
+import { celo, CONTRACTS, GroupRegistryABI, ArisanGroupABI } from "vespera-sdk";
 
 const client = createPublicClient({ chain: celo, transport: http() });
 
@@ -45,7 +45,7 @@ const token = await client.readContract({
 ### Resolve a token label
 
 ```ts
-import { TOKENS, TOKEN_LABELS } from "@vespera/sdk";
+import { TOKENS, TOKEN_LABELS } from "vespera-sdk";
 
 TOKEN_LABELS[TOKENS.USDC]; // "USDC"
 ```
@@ -53,7 +53,7 @@ TOKEN_LABELS[TOKENS.USDC]; // "USDC"
 ### Use agent policy presets
 
 ```ts
-import { AGENT_TYPES } from "@vespera/sdk";
+import { AGENT_TYPES } from "vespera-sdk";
 
 const balanced = AGENT_TYPES.find((a) => a.id === "balanced");
 balanced?.policyURI; // "ipfs://vespera-policy-balanced-v1"

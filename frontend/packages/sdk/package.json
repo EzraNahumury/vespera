@@ -1,5 +1,5 @@
 {
-  "name": "@vespera/sdk",
+  "name": "vespera-sdk",
   "version": "0.1.0",
   "description": "TypeScript SDK for the Vespera arisan (ROSCA) protocol on Celo — typed contract ABIs, mainnet addresses, chain config, and agent policy metadata.",
   "type": "module",
